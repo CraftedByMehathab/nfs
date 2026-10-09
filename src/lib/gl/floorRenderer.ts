@@ -13,8 +13,11 @@ export type RenderParams = {
   imageToPlane: Mat3 | null;
   /** How many times the texture repeats across the perspective corners, in each direction. */
   tiles: readonly [number, number];
-  /** 0 shows the original photo, 1 the full overlay. */
-  opacity: number;
+  /**
+   * Before/after divider as a share of the picture's width: left of it the
+   * original photo is shown. 0 shows the finish everywhere.
+   */
+  split: number;
   /** How strongly the photo's shadows and highlights carry onto the finish, 0..1. */
   shading: number;
   /** Average linear luminance of the original floor; 0 turns shading off. */
@@ -27,6 +30,11 @@ export type FloorRenderer = {
   /** White where the floor finish is shown, black elsewhere; same framing as the photo. */
   setMask(source: TexImageSource): void;
   render(params: RenderParams): void;
+  /**
+   * The finished picture as a JPEG, without the before/after divider.
+   * Null when nothing has been drawn yet.
+   */
+  capture(): Promise<Blob | null>;
   dispose(): void;
 };
 
@@ -63,8 +71,9 @@ function enableAnisotropy(gl: WebGL2RenderingContext): void {
 }
 
 export function createFloorRenderer(canvas: HTMLCanvasElement): FloorRenderer {
-  const gl = canvas.getContext("webgl2", { alpha: false, antialias: false });
-  if (!gl) throw new Error("WebGL2 is not supported");
+  const context = canvas.getContext("webgl2", { alpha: false, antialias: false });
+  if (!context) throw new Error("WebGL2 is not supported");
+  const gl: WebGL2RenderingContext = context;
 
   const program = createProgram(gl, VERTEX_SHADER, FRAGMENT_SHADER);
   const uniforms = {
@@ -74,6 +83,7 @@ export function createFloorRenderer(canvas: HTMLCanvasElement): FloorRenderer {
     imageToPlane: uniformLocation(gl, program, "u_imageToPlane"),
     tiles: uniformLocation(gl, program, "u_tiles"),
     opacity: uniformLocation(gl, program, "u_opacity"),
+    split: uniformLocation(gl, program, "u_split"),
     shading: uniformLocation(gl, program, "u_shading"),
     referenceLuminance: uniformLocation(gl, program, "u_referenceLuminance"),
   };
@@ -99,6 +109,24 @@ export function createFloorRenderer(canvas: HTMLCanvasElement): FloorRenderer {
   let hasFloor = false;
   let hasMask = false;
   let disposed = false;
+  let lastParams: RenderParams | null = null;
+
+  function draw({ imageToPlane, tiles, split, shading, referenceLuminance }: RenderParams): void {
+    const showOverlay = hasFloor && hasMask && imageToPlane !== null;
+    gl.useProgram(program);
+    gl.bindVertexArray(vertexArray);
+    gl.uniform1i(uniforms.photo, PHOTO_UNIT);
+    gl.uniform1i(uniforms.floor, FLOOR_UNIT);
+    gl.uniform1i(uniforms.mask, MASK_UNIT);
+    // Mat3 is row-major; GLSL is column-major, so ask WebGL to transpose.
+    gl.uniformMatrix3fv(uniforms.imageToPlane, true, [...(imageToPlane ?? IDENTITY)]);
+    gl.uniform2f(uniforms.tiles, tiles[0], tiles[1]);
+    gl.uniform1f(uniforms.opacity, showOverlay ? 1 : 0);
+    gl.uniform1f(uniforms.split, split);
+    gl.uniform1f(uniforms.shading, shading);
+    gl.uniform1f(uniforms.referenceLuminance, referenceLuminance);
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+  }
 
   return {
     setPhoto(photo) {
@@ -125,21 +153,20 @@ export function createFloorRenderer(canvas: HTMLCanvasElement): FloorRenderer {
       hasMask = true;
     },
 
-    render({ imageToPlane, tiles, opacity, shading, referenceLuminance }) {
+    render(params) {
       if (!hasPhoto) return;
-      const showOverlay = hasFloor && hasMask && imageToPlane !== null;
-      gl.useProgram(program);
-      gl.bindVertexArray(vertexArray);
-      gl.uniform1i(uniforms.photo, PHOTO_UNIT);
-      gl.uniform1i(uniforms.floor, FLOOR_UNIT);
-      gl.uniform1i(uniforms.mask, MASK_UNIT);
-      // Mat3 is row-major; GLSL is column-major, so ask WebGL to transpose.
-      gl.uniformMatrix3fv(uniforms.imageToPlane, true, [...(imageToPlane ?? IDENTITY)]);
-      gl.uniform2f(uniforms.tiles, tiles[0], tiles[1]);
-      gl.uniform1f(uniforms.opacity, showOverlay ? opacity : 0);
-      gl.uniform1f(uniforms.shading, shading);
-      gl.uniform1f(uniforms.referenceLuminance, referenceLuminance);
-      gl.drawArrays(gl.TRIANGLES, 0, 3);
+      lastParams = params;
+      draw(params);
+    },
+
+    capture() {
+      if (!hasPhoto || !lastParams) return Promise.resolve(null);
+      const params = lastParams;
+      draw({ ...params, split: 0 });
+      // toBlob copies the pixels now and encodes later, so the divider can go straight back.
+      const blob = new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.92));
+      draw(params);
+      return blob;
     },
 
     dispose() {

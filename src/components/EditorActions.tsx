@@ -10,8 +10,9 @@ type EditorActionsProps = {
   /** True when the outline is a detected or painted mask. */
   hasMask: boolean;
   onOutlineByHand: () => void;
-  showOriginal: boolean;
-  onToggleOriginal: () => void;
+  comparing: boolean;
+  onToggleCompare: () => void;
+  onDownload: () => void;
   onReset: () => void;
   onChoosePhoto: () => void;
 };
@@ -23,8 +24,9 @@ export function EditorActions({
   onToggleBrush,
   hasMask,
   onOutlineByHand,
-  showOriginal,
-  onToggleOriginal,
+  comparing,
+  onToggleCompare,
+  onDownload,
   onReset,
   onChoosePhoto,
 }: EditorActionsProps) {
@@ -48,11 +50,14 @@ export function EditorActions({
       )}
       <button
         type="button"
-        aria-pressed={showOriginal}
-        onClick={onToggleOriginal}
-        className={showOriginal ? ACTIVE_BUTTON : SECONDARY_BUTTON}
+        aria-pressed={comparing}
+        onClick={onToggleCompare}
+        className={comparing ? ACTIVE_BUTTON : SECONDARY_BUTTON}
       >
-        Show original
+        Compare
+      </button>
+      <button type="button" onClick={onDownload} className={SECONDARY_BUTTON}>
+        Download
       </button>
       <button type="button" onClick={onReset} className={SECONDARY_BUTTON}>
         Reset

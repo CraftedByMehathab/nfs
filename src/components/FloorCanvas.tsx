@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useImperativeHandle, useRef, useState, type Ref } from "react";
 import { isConvexQuad, quadToSquare } from "@/lib/geometry/homography";
 import { createFloorRenderer, type FloorRenderer } from "@/lib/gl/floorRenderer";
 import { isWebGL2Available } from "@/lib/gl/support";
@@ -8,7 +8,13 @@ import { averageMaskedLuminance, samplePixels } from "@/lib/image/luminance";
 import { drawPolygonMask } from "@/lib/image/mask";
 import type { Polygon, Quad } from "@/types/geometry";
 
+export type FloorCanvasHandle = {
+  /** The finished picture as a JPEG, or null if it cannot be captured. */
+  capture: () => Promise<Blob | null>;
+};
+
 type FloorCanvasProps = {
+  ref?: Ref<FloorCanvasHandle>;
   photo: ImageBitmap;
   /** Four corners of a rectangle on the floor, in normalised image coordinates. */
   perspective: Quad;
@@ -20,12 +26,14 @@ type FloorCanvasProps = {
   maskVersion: number;
   floorTexture: TexImageSource;
   tiles: readonly [number, number];
-  opacity: number;
+  /** Before/after divider position, 0..1; the original photo shows left of it. */
+  split: number;
   /** How strongly the photo's shadows and highlights carry onto the finish, 0..1. */
   shading: number;
 };
 
 export function FloorCanvas({
+  ref,
   photo,
   perspective,
   outline,
@@ -33,7 +41,7 @@ export function FloorCanvas({
   maskVersion,
   floorTexture,
   tiles,
-  opacity,
+  split,
   shading,
 }: FloorCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -102,7 +110,7 @@ export function FloorCanvas({
     rendererRef.current?.render({
       imageToPlane: isConvexQuad(perspective) ? quadToSquare(perspective) : null,
       tiles,
-      opacity,
+      split,
       shading,
       referenceLuminance: referenceLuminance.current,
     });
@@ -114,10 +122,16 @@ export function FloorCanvas({
     maskVersion,
     floorTexture,
     tiles,
-    opacity,
+    split,
     shading,
     generation,
   ]);
+
+  useImperativeHandle(
+    ref,
+    () => ({ capture: () => rendererRef.current?.capture() ?? Promise.resolve(null) }),
+    [],
+  );
 
   if (!supported) {
     return (

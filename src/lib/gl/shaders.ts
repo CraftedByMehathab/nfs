@@ -21,6 +21,7 @@ uniform sampler2D u_mask;
 uniform mat3 u_imageToPlane;
 uniform vec2 u_tiles;
 uniform float u_opacity;
+uniform float u_split;
 uniform float u_shading;
 uniform float u_referenceLuminance;
 
@@ -61,6 +62,8 @@ void main() {
   float coverage = textureLod(u_mask, v_uv, EDGE_BLUR).r;
   // Pixels at or beyond the plane's horizon are never floor.
   if (plane.z <= 0.0) coverage = 0.0;
+  // Before/after comparison: left of the divider stays the original photo.
+  if (v_uv.x < u_split) coverage = 0.0;
 
   outColor = vec4(toSrgb(mix(photo, floorColor, coverage * u_opacity)), 1.0);
 }

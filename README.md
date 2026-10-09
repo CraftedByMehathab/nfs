@@ -14,9 +14,10 @@ This is an early build. The full product plan is in [docs/SPEC.md](docs/SPEC.md)
 - **Zoom**: zoom to 400% and pan for precise corner placement and brushing.
 - **Live preview**: a WebGL2 shader tiles the chosen finish across the floor and warps it to match the photo's perspective. Switching finishes redraws on the GPU with no server call.
 - **Three test finishes**: flake, metallic and quartz, generated in code. They are placeholders for real texture photos.
-- **Compare**: a "Show original" toggle switches between the finish and the untouched photo.
+- **Compare**: a draggable before/after divider shows the original photo on one side and the finish on the other.
+- **Download**: save the finished picture as a JPEG.
 
-Not built yet: glossy reflections, a before/after slider, download, saving and sharing, and accounts. See [Roadmap](#roadmap).
+Not built yet: glossy reflections, saving and sharing, and accounts. See [Roadmap](#roadmap).
 
 Floor detection gives the outline of the floor but only a rough guess at its perspective. For a photo taken at an angle, drag the four orange corners onto a rectangle on the floor.
 

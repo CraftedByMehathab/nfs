@@ -4,7 +4,7 @@ import type { SelectionLayer } from "@/components/SelectionEditor";
 const DEVICE_NAMES = { webgpu: "WebGPU", wasm: "WebAssembly" } as const;
 
 type HintInput = {
-  showOriginal: boolean;
+  comparing: boolean;
   brushing: boolean;
   perspectiveValid: boolean;
   detection: FloorDetectionState;
@@ -16,7 +16,7 @@ type HintInput = {
 
 /** The one line of guidance under the picture. */
 export function selectionHint({
-  showOriginal,
+  comparing,
   brushing,
   perspectiveValid,
   detection,
@@ -24,7 +24,7 @@ export function selectionHint({
   customOutline,
   layer,
 }: HintInput): string {
-  if (showOriginal) return "This is your original photo.";
+  if (comparing) return "Drag the divider to compare your original floor with the new finish.";
   if (brushing) {
     return "Paint over floor that was missed, or switch to Erase to take the finish off things that are not floor.";
   }
