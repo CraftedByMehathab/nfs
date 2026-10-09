@@ -58,16 +58,69 @@ async function upload(
   if (error) throw new Error(`Upload failed: ${error.message}`);
 }
 
+/** Deletes the project's earlier mask files, leaving `keepPath`. Failing only leaves them behind. */
+async function removeOldMasks(
+  supabase: AppSupabaseClient,
+  folder: string,
+  keepPath: string | null,
+): Promise<void> {
+  const { data } = await supabase.storage.from("photos").list(folder);
+  const old = (data ?? [])
+    .map((file) => `${folder}/${file.name}`)
+    .filter((path) => /\/mask[^/]*\.png$/.test(path) && path !== keepPath);
+  if (old.length > 0) await supabase.storage.from("photos").remove(old);
+}
+
 /**
- * Stores the picture on screen as a new render. The first call for a photo also
- * creates its project; pass that project's id on later calls to add further
- * renders to it and keep its floor area up to date.
+ * Replaces a saved render's picture and finish settings. The picture goes in a
+ * new file, for the same caching reason as masks, and the public copy of a
+ * shared render is replaced too so its link shows the new picture.
+ */
+async function updateRender(
+  supabase: AppSupabaseClient,
+  renderId: string,
+  snapshot: ProjectSnapshot,
+  imagePath: string,
+): Promise<void> {
+  const previous = await supabase.from("renders").select("image_path, share_slug").eq("id", renderId).single();
+  if (previous.error) throw new Error(`Could not find the saved picture: ${previous.error.message}`);
+
+  await upload(supabase, "renders", imagePath, snapshot.render);
+  const updated = await supabase
+    .from("renders")
+    .update({
+      template_id: snapshot.templateId,
+      pattern_size: snapshot.patternSize,
+      shading: snapshot.shading,
+      image_path: imagePath,
+    })
+    .eq("id", renderId);
+  if (updated.error) throw new Error(`Could not save the picture: ${updated.error.message}`);
+  await supabase.storage.from("renders").remove([previous.data.image_path]);
+
+  const slug = previous.data.share_slug;
+  if (slug) {
+    // The shared bucket allows adding and removing files but not overwriting them.
+    await supabase.storage.from("shared").remove([`${slug}.jpg`]);
+    const published = await supabase.storage
+      .from("shared")
+      .upload(`${slug}.jpg`, snapshot.render, { contentType: "image/jpeg" });
+    if (published.error) throw new Error(`Saved, but the shared link was not updated: ${published.error.message}`);
+  }
+}
+
+/**
+ * Stores the picture on screen. The first call for a photo creates its project
+ * and a render. Pass that project's id on later calls to keep its floor area up
+ * to date; they add a further render, unless `existingRenderId` names a render
+ * of the project, which is then replaced instead.
  */
 export async function saveRender(
   supabase: AppSupabaseClient,
   userId: string,
   snapshot: ProjectSnapshot,
   existingProjectId: string | null,
+  existingRenderId: string | null = null,
 ): Promise<SavedRender> {
   const projectId = existingProjectId ?? crypto.randomUUID();
   const folder = `${userId}/${projectId}`;
@@ -78,7 +131,9 @@ export async function saveRender(
   }
   let maskPath: string | null = null;
   if (snapshot.mask) {
-    maskPath = `${folder}/mask.png`;
+    // A new name for every save: files are cached by path, so overwriting one
+    // would keep serving the mask as it was before the latest brush strokes.
+    maskPath = `${folder}/mask-${crypto.randomUUID()}.png`;
     await upload(supabase, "photos", maskPath, await canvasToBlob(snapshot.mask, "image/png"));
   }
 
@@ -92,6 +147,12 @@ export async function saveRender(
     corners: toJson(snapshot.perspective),
   });
   if (project.error) throw new Error(`Could not save the project: ${project.error.message}`);
+  if (existingProjectId) await removeOldMasks(supabase, folder, maskPath);
+
+  if (existingRenderId) {
+    await updateRender(supabase, existingRenderId, snapshot, `${folder}/${crypto.randomUUID()}.jpg`);
+    return { projectId, renderId: existingRenderId };
+  }
 
   const renderId = crypto.randomUUID();
   const imagePath = `${folder}/${renderId}.jpg`;

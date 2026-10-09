@@ -20,10 +20,12 @@ type ProjectActionsProps = {
   getSnapshot: () => Promise<ProjectSnapshot | null>;
   /** Changes whenever the picture on screen does, so the same picture is not saved twice. */
   signature: string;
+  /** The saved picture being edited, which saving replaces; null for a new photo. */
+  editing: SavedRender | null;
 };
 
 /** Save and Share for the picture on screen. Both need an account. */
-export function ProjectActions({ getSnapshot, signature }: ProjectActionsProps) {
+export function ProjectActions({ getSnapshot, signature, editing }: ProjectActionsProps) {
   const { user } = useSession();
   const [status, setStatus] = useState<Status>({ kind: "idle" });
   const [signingIn, setSigningIn] = useState(false);
@@ -39,7 +41,8 @@ export function ProjectActions({ getSnapshot, signature }: ProjectActionsProps) 
     if (saved && saved.signature === signature) return saved;
     const snapshot = await getSnapshot();
     if (!snapshot) throw new Error("The picture is not ready yet.");
-    const result = await saveRender(supabase, user.id, snapshot, saved?.projectId ?? null);
+    const projectId = saved?.projectId ?? editing?.projectId ?? null;
+    const result = await saveRender(supabase, user.id, snapshot, projectId, editing?.renderId ?? null);
     const next = { ...result, signature, picture: snapshot.render };
     setSaved(next);
     return next;

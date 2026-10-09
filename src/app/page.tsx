@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { AccountMenu } from "@/components/AccountMenu";
 import { Visualizer } from "@/components/Visualizer";
 
@@ -13,7 +14,10 @@ export default function Home() {
           Take or upload a photo of your floor to preview an epoxy finish.
         </p>
       </header>
-      <Visualizer />
+      {/* Visualizer reads the query string, which is only known in the browser. */}
+      <Suspense fallback={null}>
+        <Visualizer />
+      </Suspense>
     </main>
   );
 }
