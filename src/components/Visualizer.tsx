@@ -42,7 +42,11 @@ export function Visualizer() {
         key={renderId}
         photo={opened.project.photo}
         initial={opened.project}
-        onChoosePhoto={() => router.replace("/")}
+        onChoosePhoto={() => {
+          // Also drop any photo left from before the saved picture was opened.
+          replacePhoto(null);
+          router.replace("/");
+        }}
       />
     );
   }

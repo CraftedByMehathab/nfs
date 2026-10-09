@@ -12,7 +12,14 @@ export type OpenedProjectState =
 
 type Loaded = { renderId: string; project: OpenedProject | null; message: string };
 
-/** Loads the saved picture `renderId` for the editor; idle while `renderId` is null. */
+/**
+ * Loads the saved picture `renderId` for the editor; idle while `renderId` is null.
+ *
+ * Next keeps this page's state while another page is shown, cleaning up its
+ * effects on the way out and re-running them on return. The cleanup closes the
+ * photo, so it also forgets the loaded picture: coming back loads it afresh
+ * instead of showing a closed photo.
+ */
 export function useOpenedProject(renderId: string | null): OpenedProjectState {
   const [loaded, setLoaded] = useState<Loaded | null>(null);
 
@@ -41,12 +48,14 @@ export function useOpenedProject(renderId: string | null): OpenedProjectState {
     );
     return () => {
       cancelled = true;
-      photo?.close();
+      if (!photo) return;
+      photo.close();
+      setLoaded(null);
     };
   }, [renderId]);
 
   if (!renderId) return { status: "idle" };
-  // A result for a different picture is stale, and its photo is already closed.
+  // A result for a different picture is stale.
   if (loaded?.renderId !== renderId) return { status: "loading" };
   if (!loaded.project) return { status: "failed", message: loaded.message };
   return { status: "ready", project: loaded.project };
