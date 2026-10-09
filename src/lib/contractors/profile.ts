@@ -1,10 +1,8 @@
 import type { AppSupabaseClient } from "@/lib/supabase/client";
 import { isAccent } from "./accent";
+import { looksLikeEmail, NAME_MAX_LENGTH, PHONE_MAX_LENGTH } from "./contact";
 import { isValidSlug, SLUG_MAX_LENGTH, SLUG_MIN_LENGTH } from "./slug";
 
-const NAME_MAX_LENGTH = 80;
-const EMAIL_MAX_LENGTH = 254;
-const PHONE_MAX_LENGTH = 40;
 // Postgres's code for breaking a unique constraint.
 const UNIQUE_VIOLATION = "23505";
 
@@ -47,9 +45,7 @@ export function checkDraft(draft: ContractorDraft): CheckedDraft {
     );
   }
   if (!isAccent(accent)) return fail("Pick a header colour.");
-  if (email && (!/^\S+@\S+\.\S+$/.test(email) || email.length > EMAIL_MAX_LENGTH)) {
-    return fail("That email address does not look right.");
-  }
+  if (email && !looksLikeEmail(email)) return fail("That email address does not look right.");
   if (phone.length > PHONE_MAX_LENGTH) return fail(`Keep the phone number to ${PHONE_MAX_LENGTH} characters.`);
 
   return { profile: { slug, name, accent, email: email || null, phone: phone || null }, error: null };

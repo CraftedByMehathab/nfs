@@ -38,7 +38,9 @@ Built so far: the contractor page. A signed-in user sets up one page at `/contra
 
 Any signed-in user can set up a contractor page; a user is a contractor if they have a row in `contractors`. There is no approval step or plan.
 
-Still to build, in this order: a "request a quote" form on the contractor page with a leads inbox for the contractor, a logo, the contractor's own finishes, and an embeddable widget.
+Quote requests are also built. On a contractor's page the editor shows "Request a quote" (`QuoteRequest`, which knows it is on a contractor's page through `ContractorContext`). The visitor, signed in or not, sends a name, an email or phone, an optional message, and the picture on screen. The `submit_lead` function creates the row in `leads` and returns the one path in the private `leads` bucket where the picture may be uploaded, once, within ten minutes. Visitors cannot read requests back. The contractor reads and deletes them at `/contractor/leads`. Nothing limits how many requests a visitor can send, and the contractor is not notified by email.
+
+Still to build, in this order: a logo for the contractor, the contractor's own finishes, and an embeddable widget.
 
 ## Phase 3 decisions
 
@@ -70,7 +72,7 @@ src/lib/image/           file/camera -> ImageBitmap, resize, mask drawing
 src/lib/segmentation/     floor detection worker and its client
 src/lib/supabase/         Supabase clients
 src/lib/projects/         saving, sharing and listing saved pictures
-src/lib/contractors/      contractor pages: address, colour, loading and saving
+src/lib/contractors/      contractor pages and the quote requests sent to them
 src/lib/geometry/        homography math (pure, unit-tested)
 src/lib/gl/              WebGL2 program helpers, floor renderer, shaders
 src/lib/templates/       epoxy template definitions and texture sources
