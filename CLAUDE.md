@@ -16,7 +16,7 @@ From Phase 4, the catalogue has ten finishes (flake, metallic, quartz and solid)
 
 On a phone held upright the editor's picture stays at the top of the screen while the controls scroll under it (`.picture-dock` in `globals.css`), and every control is at least 44px, the smallest size a finger hits reliably; use the shared classes in `buttonStyles.ts` for new buttons and links.
 
-Not done from Phase 4: the Lighthouse ≥ 90 mobile target and the case study.
+The live site scored 98 for performance on Lighthouse's mobile test on 2026-10-09 (home and projects pages, one run each), against a target of 90. A first draft of the case study is in `docs/CASE_STUDY.md`; it still needs screenshots of real floors.
 
 The selection has two parts. The **perspective** is always exactly four corners marking a rectangle on the floor; it gives the homography. The **outline** says where the finish is shown; it is a mask texture that the shader clips to. The mask comes either from a hand-drawn polygon of three or more points, or from floor detection.
 
