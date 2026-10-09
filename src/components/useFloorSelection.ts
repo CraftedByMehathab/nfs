@@ -7,6 +7,8 @@ import { DEFAULT_QUAD } from "@/lib/geometry/quad";
 import { drawPolygonMask } from "@/lib/image/mask";
 import type { Polygon, Quad } from "@/types/geometry";
 
+export type FloorSelection = ReturnType<typeof useFloorSelection>;
+
 /** Where the finish goes on `photo`: the perspective corners plus an outline or mask. */
 export function useFloorSelection(photo: ImageBitmap) {
   const [perspective, setPerspective] = useState<Quad>(DEFAULT_QUAD);

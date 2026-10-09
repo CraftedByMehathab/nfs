@@ -1,21 +1,20 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { BrushControls } from "@/components/BrushControls";
-import { CompareSlider } from "@/components/CompareSlider";
 import { EditorActions } from "@/components/EditorActions";
 import { FinishControls, type FinishSettings } from "@/components/FinishControls";
-import { FloorCanvas, type FloorCanvasHandle } from "@/components/FloorCanvas";
-import { MaskBrush } from "@/components/MaskBrush";
+import type { FloorCanvasHandle } from "@/components/FloorCanvas";
+import { FloorStage, type BrushSettings } from "@/components/FloorStage";
+import { ProjectActions } from "@/components/ProjectActions";
 import { SegmentedToggle } from "@/components/SegmentedToggle";
-import { SelectionEditor, type SelectionLayer } from "@/components/SelectionEditor";
+import type { SelectionLayer } from "@/components/SelectionEditor";
 import { selectionHint } from "@/components/selectionHint";
 import { useFloorSelection } from "@/components/useFloorSelection";
-import { ZoomViewport } from "@/components/ZoomViewport";
 import { isConvexQuad } from "@/lib/geometry/homography";
 import { downloadBlob } from "@/lib/image/download";
-import type { BrushMode } from "@/lib/image/mask";
-import { getTemplateTexture, TEMPLATES } from "@/lib/templates";
+import type { ProjectSnapshot } from "@/lib/projects/save";
+import { TEMPLATES } from "@/lib/templates";
 
 const LAYERS: readonly { id: SelectionLayer; label: string }[] = [
   { id: "outline", label: "Outline" },
@@ -30,9 +29,7 @@ type FloorEditorProps = {
 export function FloorEditor({ photo, onChoosePhoto }: FloorEditorProps) {
   const selection = useFloorSelection(photo);
   const canvas = useRef<FloorCanvasHandle>(null);
-  const [brushing, setBrushing] = useState(false);
-  const [brushMode, setBrushMode] = useState<BrushMode>("add");
-  const [brushSize, setBrushSize] = useState(60);
+  const [brush, setBrush] = useState<BrushSettings>({ on: false, mode: "add", size: 60 });
   const [comparing, setComparing] = useState(false);
   // Before/after divider position; the original photo shows left of it.
   const [split, setSplit] = useState(0.5);
@@ -44,19 +41,19 @@ export function FloorEditor({ photo, onChoosePhoto }: FloorEditorProps) {
 
   const { perspective, outline, mask } = selection;
   const perspectiveValid = isConvexQuad(perspective);
-  const repeats = finish.template.scale / finish.patternSize;
-  const tiles = useMemo(() => [repeats, repeats] as const, [repeats]);
   const editing = !comparing;
+  const brushing = brush.on;
   const warn = editing && !brushing && !selection.detecting && !perspectiveValid;
+  // Identifies the picture on screen, so saving twice without a change stores it once.
+  const signature = JSON.stringify([finish, perspective, outline, selection.maskVersion, mask !== null]);
 
   function toggleBrush(): void {
     if (!brushing) selection.ensureMask();
-    setBrushing((current) => !current);
+    setBrush({ ...brush, on: !brushing });
   }
 
-  function outlineByHand(): void {
-    selection.clearMask();
-    setBrushing(false);
+  function stopBrushing(): void {
+    setBrush((current) => ({ ...current, on: false }));
   }
 
   async function download(): Promise<void> {
@@ -64,49 +61,38 @@ export function FloorEditor({ photo, onChoosePhoto }: FloorEditorProps) {
     if (blob) downloadBlob(blob, `nextfloor-${finish.template.id}.jpg`);
   }
 
+  async function getSnapshot(): Promise<ProjectSnapshot | null> {
+    const render = await canvas.current?.capture();
+    if (!render) return null;
+    return {
+      photo,
+      perspective,
+      outline,
+      mask,
+      templateId: finish.template.id,
+      patternSize: finish.patternSize,
+      shading: finish.shading,
+      render,
+    };
+  }
+
   return (
     <div className="flex w-full flex-col items-center gap-4">
-      <ZoomViewport aspectRatio={photo.width / photo.height}>
-        <SelectionEditor
-          perspective={perspective}
-          outline={outline}
-          layer={selection.layer}
-          maskIsImage={mask !== null}
-          onPerspectiveChange={selection.setPerspective}
-          onOutlineChange={selection.setOutline}
-          aspectRatio={photo.width / photo.height}
-          perspectiveInvalid={!perspectiveValid}
-          pointsVisible={editing && !brushing}
-        >
-          <FloorCanvas
-            ref={canvas}
-            photo={photo}
-            perspective={perspective}
-            outline={outline ?? perspective}
-            maskImage={mask}
-            maskVersion={selection.maskVersion}
-            floorTexture={getTemplateTexture(finish.template)}
-            tiles={tiles}
-            split={comparing ? split : 0}
-            shading={finish.shading}
-          />
-          {editing && brushing && mask && (
-            <MaskBrush
-              mask={mask}
-              mode={brushMode}
-              size={brushSize}
-              onPaint={selection.markMaskChanged}
-            />
-          )}
-          {comparing && <CompareSlider value={split} onChange={setSplit} />}
-        </SelectionEditor>
-      </ZoomViewport>
+      <FloorStage
+        ref={canvas}
+        photo={photo}
+        selection={selection}
+        finish={finish}
+        brush={brush}
+        split={comparing ? split : null}
+        onSplitChange={setSplit}
+      />
       {editing && brushing && (
         <BrushControls
-          mode={brushMode}
-          onModeChange={setBrushMode}
-          size={brushSize}
-          onSizeChange={setBrushSize}
+          mode={brush.mode}
+          onModeChange={(mode) => setBrush({ ...brush, mode })}
+          size={brush.size}
+          onSizeChange={(size) => setBrush({ ...brush, size })}
         />
       )}
       {editing && outline && !mask && (
@@ -140,16 +126,20 @@ export function FloorEditor({ photo, onChoosePhoto }: FloorEditorProps) {
         brushing={brushing}
         onToggleBrush={toggleBrush}
         hasMask={mask !== null}
-        onOutlineByHand={outlineByHand}
+        onOutlineByHand={() => {
+          selection.clearMask();
+          stopBrushing();
+        }}
         comparing={comparing}
         onToggleCompare={() => setComparing((current) => !current)}
         onDownload={download}
         onReset={() => {
           selection.reset();
-          setBrushing(false);
+          stopBrushing();
         }}
         onChoosePhoto={onChoosePhoto}
       />
+      <ProjectActions getSnapshot={getSnapshot} signature={signature} />
     </div>
   );
 }

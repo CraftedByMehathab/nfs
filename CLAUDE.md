@@ -8,7 +8,7 @@ Epoxy floor visualizer: snap or upload a photo of a floor, pick an epoxy design,
 
 Pipeline (full product): capture photo -> detect floor -> fit 4 corners to a homography -> tile the template texture in a WebGL shader, warped by the homography and clipped to the floor -> blend original lighting -> compare, download, share.
 
-**Current phase: Phase 3 — Accounts & Saving.** Phase 1 (upload or camera capture, resize to ~1024px, manual floor selection, WebGL2 overlay, 3 test finishes) and Phase 2 (floor detection, brush, lighting) are built. From Phase 3, the before/after divider and JPEG download are built; Supabase auth, storage, saved projects and share links are not started.
+**Current phase: Phase 3 — Accounts & Saving.** Phase 1 (upload or camera capture, resize to ~1024px, manual floor selection, WebGL2 overlay, 3 test finishes) and Phase 2 (floor detection, brush, lighting) are built. From Phase 3, the before/after divider, JPEG download, saving, share links and a projects page are built and tested against a local Supabase. Not done: Google sign-in, the only sign-in method, is written but untested (no OAuth credentials yet), a saved project cannot be reopened in the editor, and nothing is deployed to a cloud project.
 
 The selection has two parts. The **perspective** is always exactly four corners marking a rectangle on the floor; it gives the homography. The **outline** says where the finish is shown; it is a mask texture that the shader clips to. The mask comes either from a hand-drawn polygon of three or more points, or from floor detection.
 
@@ -26,9 +26,11 @@ Out of scope until later phases: photoreal AI mode, contractor features. Do not 
 
 ## Phase 3 decisions
 
-- Sign-in offers both an email magic link and Google.
+- Sign-in is Google only. Email sign-in is switched off in `supabase/config.toml`; switch the Email provider off in any cloud project too.
 - Saving and sharing need an account. Signed-out visitors can use the whole editor and download, but not save or share.
 - A share link shows the finished picture only, not the original photo.
+- Auth is entirely client-side (`src/lib/supabase/client.ts`, `useSession`): the session lives in the browser, and row-level security is what protects data. There is no server session, proxy or auth route handler. Sign-in finishes in a popup (`/auth/complete`) so the editor keeps its unsaved picture.
+- Without `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` the account features hide themselves and the editor still works.
 - The schema is in `supabase/migrations/`. A project stores the photo, the four perspective corners, and either a mask image or an outline polygon. Files live in private buckets under `<user_id>/`; sharing copies the picture to a public bucket under a random slug.
 
 ## Stack
@@ -50,6 +52,8 @@ src/app/                 layout.tsx, page.tsx, globals.css
 src/components/          UI components, one per file
 src/lib/image/           file/camera -> ImageBitmap, resize, mask drawing
 src/lib/segmentation/     floor detection worker and its client
+src/lib/supabase/         Supabase clients
+src/lib/projects/         saving, sharing and listing saved pictures
 src/lib/geometry/        homography math (pure, unit-tested)
 src/lib/gl/              WebGL2 program helpers, floor renderer, shaders
 src/lib/templates/       epoxy template definitions and texture sources
@@ -76,4 +80,7 @@ pnpm build       # production build
 pnpm lint        # ESLint
 pnpm test        # Vitest
 pnpm typecheck   # tsc --noEmit
+pnpm db:start    # local Supabase in Docker (API on :54321, Studio on :54323)
+pnpm db:reset    # wipe the local database and reapply the migrations
+pnpm db:types    # regenerate src/types/database.ts from the local database
 ```

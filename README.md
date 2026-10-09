@@ -16,8 +16,9 @@ This is an early build. The full product plan is in [docs/SPEC.md](docs/SPEC.md)
 - **Three test finishes**: flake, metallic and quartz, generated in code. They are placeholders for real texture photos.
 - **Compare**: a draggable before/after divider shows the original photo on one side and the finish on the other.
 - **Download**: save the finished picture as a JPEG.
+- **Accounts**: sign in with Google to save pictures to your projects and share one by public link. Google sign-in needs OAuth credentials to be configured before it works.
 
-Not built yet: glossy reflections, saving and sharing, and accounts. See [Roadmap](#roadmap).
+Not built yet: glossy reflections, reopening a saved project in the editor, and deployment. See [Roadmap](#roadmap).
 
 Floor detection gives the outline of the floor but only a rough guess at its perspective. For a photo taken at an angle, drag the four orange corners onto a rectangle on the floor.
 
@@ -46,6 +47,8 @@ pnpm dev
 
 Then open <http://localhost:3000>.
 
+Accounts are optional. To use them locally, run `pnpm db:start` (needs Docker), then copy `.env.example` to `.env.local` and fill in the API URL and publishable key that the command prints. Without `.env.local`, the editor works and the account features are hidden.
+
 The live camera view needs HTTPS or `localhost`. If you open the dev server from a phone over plain HTTP on your local network, "Use camera" opens the phone's own camera app instead.
 
 ## Commands
@@ -57,6 +60,9 @@ The live camera view needs HTTPS or `localhost`. If you open the dev server from
 | `pnpm lint` | ESLint |
 | `pnpm test` | Unit tests (Vitest) |
 | `pnpm typecheck` | Generate route types, then `tsc --noEmit` |
+| `pnpm db:start` | Start a local Supabase in Docker |
+| `pnpm db:reset` | Wipe the local database and reapply migrations |
+| `pnpm db:types` | Regenerate database types |
 
 ## Project layout
 
@@ -69,6 +75,9 @@ src/lib/gl/            WebGL2 renderer and shaders
 src/lib/image/         photo decoding, resizing, masks, luminance
 src/lib/segmentation/  floor detection worker and its client
 src/lib/templates/     the epoxy finishes
+src/lib/supabase/      Supabase clients
+src/lib/projects/      saving, sharing and listing saved pictures
+supabase/migrations/   database schema and access rules
 src/types/             shared types
 ```
 
@@ -84,6 +93,6 @@ Next.js 16 (App Router), React 19, TypeScript in strict mode, Tailwind CSS 4, ha
 |---|---|---|
 | 1 | Upload, manual floor selection, WebGL texture overlay | Built |
 | 2 | Automatic floor detection in the browser, mask refinement, lighting | Built |
-| 3 | Accounts, saved projects, share links | Next |
+| 3 | Accounts, saved projects, share links | In progress |
 | 4 | Polish, mobile, deployment | Planned |
 | 5 | Photoreal AI render, contractor features | Stretch |

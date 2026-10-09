@@ -109,14 +109,16 @@ create policy "Users manage renders of their own projects"
 -- access to the renders table, so they cannot list what has been shared; they
 -- can only fetch a render whose slug they already hold.
 create function public.get_shared_render(slug text)
-returns table (id uuid, template_id text, share_slug text, created_at timestamptz)
+returns table (template_name text, width integer, height integer, created_at timestamptz)
 language sql
 stable
 security definer
 set search_path = ''
 as $$
-  select r.id, r.template_id, r.share_slug, r.created_at
+  select t.name, p.width, p.height, r.created_at
   from public.renders r
+  join public.projects p on p.id = r.project_id
+  join public.templates t on t.id = r.template_id
   where r.share_slug = slug;
 $$;
 
