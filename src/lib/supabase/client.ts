@@ -3,8 +3,8 @@ import type { Database } from "@/types/database";
 
 export type AppSupabaseClient = SupabaseClient<Database>;
 
-const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+const url = process.env.SUPABASE_URL;
+const key = process.env.SUPABASE_PUBLISHABLE_KEY;
 
 let browserClient: AppSupabaseClient | null | undefined;
 
@@ -19,7 +19,10 @@ export const supabaseConfigured = Boolean(url && key);
  */
 export function getSupabase(): AppSupabaseClient | null {
   if (browserClient === undefined) {
-    browserClient = url && key ? createClient<Database>(url, key, { auth: { flowType: "pkce" } }) : null;
+    browserClient =
+      url && key
+        ? createClient<Database>(url, key, { auth: { flowType: "pkce" } })
+        : null;
   }
   return browserClient;
 }
@@ -28,7 +31,11 @@ export function getSupabase(): AppSupabaseClient | null {
 export function createAnonymousClient(): AppSupabaseClient | null {
   if (!url || !key) return null;
   return createClient<Database>(url, key, {
-    auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
+      detectSessionInUrl: false,
+    },
   });
 }
 
