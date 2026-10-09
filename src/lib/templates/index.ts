@@ -1,4 +1,4 @@
-import type { Template } from "@/types/template";
+import type { Template, TemplateCategory } from "@/types/template";
 import { createFlake } from "./flake";
 import { createMetallic } from "./metallic";
 import { createQuartz } from "./quartz";
@@ -82,6 +82,14 @@ export const TEMPLATES: readonly [Template, ...Template[]] = [
   },
   { id: "dove-solid", name: "Dove Grey", category: "solid", scale: 1.5, draw: createSolid({ seed: 37, color: [184, 188, 192] }) },
   { id: "graphite-solid", name: "Graphite", category: "solid", scale: 1.5, draw: createSolid({ seed: 41, color: [63, 67, 71] }) },
+];
+
+/** The finish types, in the order the picker offers them. */
+export const TEMPLATE_CATEGORIES: readonly { id: TemplateCategory; label: string }[] = [
+  { id: "flake", label: "Flake" },
+  { id: "metallic", label: "Metallic" },
+  { id: "quartz", label: "Quartz" },
+  { id: "solid", label: "Solid" },
 ];
 
 const textures = new Map<string, HTMLCanvasElement>();

@@ -12,7 +12,7 @@ Pipeline (full product): capture photo -> detect floor -> fit 4 corners to a hom
 
 The app is deployed on Vercel at https://nfs-pied.vercel.app, from the GitHub repo: a merge to `main` deploys to production and each pull request gets a preview. It uses a cloud Supabase project that has the schema applied; Google sign-in and share links work against that project from a local dev server. Saving, sharing and reopening have automated browser checks against a local Supabase only, and on the deployed site only the signed-out pages have been checked.
 
-From Phase 4, the catalogue has ten finishes (flake, metallic, quartz and solid), each painted in code by `src/lib/templates`. A finish must also be a row in the `templates` table, added by a migration, or pictures using it cannot be saved; `catalogue.test.ts` checks the two agree. Apply new migrations to the cloud project (`supabase db push`) before merging, because a merge to `main` deploys.
+From Phase 4, the catalogue has ten finishes (flake, metallic, quartz and solid), each painted in code by `src/lib/templates`. The picker shows one category at a time, chosen with tabs. A finish must also be a row in the `templates` table, added by a migration, or pictures using it cannot be saved; `catalogue.test.ts` checks the two agree. Apply new migrations to the cloud project (`supabase db push`) before merging, because a merge to `main` deploys.
 
 Not done from Phase 4: mobile polish, the Lighthouse ≥ 90 mobile target, and the case study.
 
