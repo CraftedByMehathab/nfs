@@ -23,7 +23,21 @@ export type Database = {
           }
         },"public": {
           Tables: {
-            "projects": {
+            "contractors": {
+                  Row: {
+                    "accent": string,"created_at": string,"email": string | null,"id": string,"name": string,"phone": string | null,"slug": string,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "accent"?: string,"created_at"?: string,"email"?: string | null,"id"?: string,"name": string,"phone"?: string | null,"slug": string,"user_id"?: string
+                  }
+                  Update: {
+                    "accent"?: string,"created_at"?: string,"email"?: string | null,"id"?: string,"name"?: string,"phone"?: string | null,"slug"?: string,"user_id"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
+                },"projects": {
                   Row: {
                     "corners": NonNullable<Json>,"created_at": string,"height": number,"id": string,"mask_path": string | null,"name": string | null,"original_path": string,"outline": Json | null,"user_id": string,"width": number
                   }
@@ -83,7 +97,12 @@ isOneToOne: false
             [_ in never]: never
           }
           Functions: {
-            "get_shared_render":
+            "get_contractor":
+{ Args: { "slug": string }; Returns: {
+              "accent": string,"email": string,"name": string,"phone": string
+            }[]
+                           },
+"get_shared_render":
 { Args: { "slug": string }; Returns: {
               "created_at": string,"height": number,"template_name": string,"width": number
             }[]

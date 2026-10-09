@@ -8,7 +8,7 @@ Epoxy floor visualizer: snap or upload a photo of a floor, pick an epoxy design,
 
 Pipeline (full product): capture photo -> detect floor -> fit 4 corners to a homography -> tile the template texture in a WebGL shader, warped by the homography and clipped to the floor -> blend original lighting -> compare, download, share.
 
-**Current phase: Phase 4 — Polish, mobile, deploy, case study.** Phases 1 to 3 are built. Phase 1: upload or camera capture, resize to ~1024px, manual floor selection, WebGL2 overlay, the first finishes. Phase 2: floor detection, brush, lighting. Phase 3: the before/after divider, JPEG download, Google sign-in (the only sign-in method), saving, share links and a projects page. A saved picture reopens in the editor from its Edit link (`/?render=<id>`, loaded by `src/lib/projects/open.ts`), and saving from there replaces that picture instead of adding one.
+**Current phase: Phase 5 — contractor features.** Phases 1 to 4 are built. Photoreal AI mode, the other half of Phase 5, has not been started. Phase 1: upload or camera capture, resize to ~1024px, manual floor selection, WebGL2 overlay, the first finishes. Phase 2: floor detection, brush, lighting. Phase 3: the before/after divider, JPEG download, Google sign-in (the only sign-in method), saving, share links and a projects page. A saved picture reopens in the editor from its Edit link (`/?render=<id>`, loaded by `src/lib/projects/open.ts`), and saving from there replaces that picture instead of adding one.
 
 The app is deployed on Vercel at https://nfs-pied.vercel.app, from the GitHub repo: a merge to `main` deploys to production and each pull request gets a preview. It uses a cloud Supabase project that has the schema applied; Google sign-in and share links work against that project from a local dev server. Saving, sharing and reopening have automated browser checks against a local Supabase only, and on the deployed site only the signed-out pages have been checked.
 
@@ -30,7 +30,15 @@ The shader carries the photo's lighting onto the finish: it compares a blurred c
 
 All six Phase 2 tasks are built. The picture can also be zoomed and panned (`ZoomViewport`).
 
-Out of scope until later phases: photoreal AI mode, contractor features. Do not add these, or their dependencies, yet.
+Out of scope for now: photoreal AI mode. Do not add it, or its dependencies, yet.
+
+## Phase 5: contractor features
+
+Built so far: the contractor page. A signed-in user sets up one page at `/contractor` (business name, address, header colour, optional contact email and phone), stored as a row in `contractors`. Visitors open it at `/c/<slug>`, which shows the same editor under the contractor's name. The page is read through the `get_contractor` function, so signed-out visitors can open a page they have the address of but cannot list contractors. The logic is in `src/lib/contractors/`.
+
+Any signed-in user can set up a contractor page; a user is a contractor if they have a row in `contractors`. There is no approval step or plan.
+
+Still to build, in this order: a "request a quote" form on the contractor page with a leads inbox for the contractor, a logo, the contractor's own finishes, and an embeddable widget.
 
 ## Phase 3 decisions
 
@@ -62,6 +70,7 @@ src/lib/image/           file/camera -> ImageBitmap, resize, mask drawing
 src/lib/segmentation/     floor detection worker and its client
 src/lib/supabase/         Supabase clients
 src/lib/projects/         saving, sharing and listing saved pictures
+src/lib/contractors/      contractor pages: address, colour, loading and saving
 src/lib/geometry/        homography math (pure, unit-tested)
 src/lib/gl/              WebGL2 program helpers, floor renderer, shaders
 src/lib/templates/       epoxy template definitions and texture sources

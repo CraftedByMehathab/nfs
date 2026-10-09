@@ -32,6 +32,9 @@ export function AccountMenu() {
       <Link href="/projects" className={LINK}>
         My projects
       </Link>
+      <Link href="/contractor" className={LINK}>
+        Business page
+      </Link>
       <span className="hidden text-sm text-zinc-600 sm:inline dark:text-zinc-400">{user.email}</span>
       <button
         type="button"
