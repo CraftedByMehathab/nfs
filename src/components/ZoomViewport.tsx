@@ -8,7 +8,7 @@ import type { Point } from "@/types/geometry";
 // Room around the picture so handles on its very edge are not cut off.
 const PADDING = 12;
 const WHEEL_SPEED = 0.01;
-const SMALL_BUTTON = `${SECONDARY_BUTTON} px-3! py-1!`;
+const SMALL_BUTTON = `${SECONDARY_BUTTON} min-w-11 px-3!`;
 
 type ZoomViewportProps = {
   /** Picture width divided by height. */
@@ -55,14 +55,14 @@ export function ZoomViewport({ aspectRatio, children }: ZoomViewportProps) {
   }, []);
 
   return (
-    <div className="flex w-full flex-col items-center gap-2">
+    <div className="picture-dock flex w-full flex-col items-center gap-2">
       <div
         ref={viewportRef}
         data-zoom-viewport
         className="overflow-auto [scrollbar-width:thin]"
         style={{
           aspectRatio,
-          width: `min(100%, calc(70vh * ${aspectRatio}))`,
+          width: `min(100%, calc(var(--picture-max-height) * ${aspectRatio}))`,
           // The padding sits outside the picture's own size and is cancelled by the margin.
           boxSizing: "content-box",
           padding: PADDING,

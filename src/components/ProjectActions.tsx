@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ACTIVE_BUTTON, SECONDARY_BUTTON } from "@/components/buttonStyles";
+import { ACTIVE_BUTTON, SECONDARY_BUTTON, TEXT_LINK } from "@/components/buttonStyles";
 import { SignInDialog } from "@/components/SignInDialog";
 import { useSession } from "@/components/useSession";
 import { saveRender, type ProjectSnapshot, type SavedRender } from "@/lib/projects/save";
@@ -102,7 +102,7 @@ export function ProjectActions({ getSnapshot, signature, editing }: ProjectActio
             <a href={status.url} target="_blank" rel="noreferrer" className="break-all underline">
               {status.url}
             </a>
-            <button type="button" onClick={() => copyLink(status.url)} className="font-medium underline">
+            <button type="button" onClick={() => copyLink(status.url)} className={TEXT_LINK}>
               {status.copied ? "Copied" : "Copy link"}
             </button>
           </>

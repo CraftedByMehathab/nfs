@@ -14,7 +14,9 @@ The app is deployed on Vercel at https://nfs-pied.vercel.app, from the GitHub re
 
 From Phase 4, the catalogue has ten finishes (flake, metallic, quartz and solid), each painted in code by `src/lib/templates`. The picker shows one category at a time, chosen with tabs. A finish must also be a row in the `templates` table, added by a migration, or pictures using it cannot be saved; `catalogue.test.ts` checks the two agree. Apply new migrations to the cloud project (`supabase db push`) before merging, because a merge to `main` deploys.
 
-Not done from Phase 4: mobile polish, the Lighthouse ≥ 90 mobile target, and the case study.
+On a phone held upright the editor's picture stays at the top of the screen while the controls scroll under it (`.picture-dock` in `globals.css`), and every control is at least 44px, the smallest size a finger hits reliably; use the shared classes in `buttonStyles.ts` for new buttons and links.
+
+Not done from Phase 4: the Lighthouse ≥ 90 mobile target and the case study.
 
 The selection has two parts. The **perspective** is always exactly four corners marking a rectangle on the floor; it gives the homography. The **outline** says where the finish is shown; it is a mask texture that the shader clips to. The mask comes either from a hand-drawn polygon of three or more points, or from floor detection.
 

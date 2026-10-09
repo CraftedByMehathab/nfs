@@ -32,7 +32,7 @@ export function BrushControls({ mode, onModeChange, size, onSizeChange }: BrushC
           step={2}
           value={size}
           onChange={(event) => onSizeChange(event.currentTarget.valueAsNumber)}
-          className="w-32 accent-sky-500"
+          className="h-11 w-32 accent-sky-500"
         />
       </label>
     </div>

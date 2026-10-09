@@ -35,7 +35,7 @@ function Slider({ label, min, max, value, onChange }: SliderProps) {
         step={0.05}
         value={value}
         onChange={(event) => onChange(event.currentTarget.valueAsNumber)}
-        className="w-32 accent-sky-500"
+        className="h-11 w-32 accent-sky-500"
       />
     </label>
   );

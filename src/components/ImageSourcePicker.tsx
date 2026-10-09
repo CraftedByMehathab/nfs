@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState, type ChangeEvent } from "react";
+import { ACTIVE_BUTTON, SECONDARY_BUTTON } from "@/components/buttonStyles";
 import { CameraCapture } from "@/components/CameraCapture";
 import { decodeImageFile } from "@/lib/image/resize";
 
@@ -61,7 +62,7 @@ export function ImageSourcePicker({ onImage }: ImageSourcePickerProps) {
           type="button"
           onClick={() => uploadRef.current?.click()}
           disabled={busy}
-          className="rounded-full bg-foreground px-5 py-2 text-sm font-medium text-background disabled:opacity-50"
+          className={ACTIVE_BUTTON}
         >
           {busy ? "Loading…" : "Upload photo"}
         </button>
@@ -69,7 +70,7 @@ export function ImageSourcePicker({ onImage }: ImageSourcePickerProps) {
           type="button"
           onClick={openCamera}
           disabled={busy}
-          className="rounded-full border border-black/10 px-5 py-2 text-sm font-medium disabled:opacity-50 dark:border-white/20"
+          className={SECONDARY_BUTTON}
         >
           Use camera
         </button>

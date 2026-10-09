@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { resizeToBitmap } from "@/lib/image/resize";
+import { ACTIVE_BUTTON, SECONDARY_BUTTON } from "@/components/buttonStyles";
 
 type Status = "starting" | "ready" | "failed";
 
@@ -65,7 +66,7 @@ export function CameraCapture({ onCapture, onCancel }: CameraCaptureProps) {
         <button
           type="button"
           onClick={onCancel}
-          className="rounded-full border border-black/10 px-5 py-2 text-sm font-medium dark:border-white/20"
+          className={SECONDARY_BUTTON}
         >
           Back
         </button>
@@ -88,14 +89,14 @@ export function CameraCapture({ onCapture, onCancel }: CameraCaptureProps) {
           type="button"
           onClick={capture}
           disabled={status !== "ready"}
-          className="rounded-full bg-foreground px-5 py-2 text-sm font-medium text-background disabled:opacity-50"
+          className={ACTIVE_BUTTON}
         >
           Take photo
         </button>
         <button
           type="button"
           onClick={onCancel}
-          className="rounded-full border border-black/10 px-5 py-2 text-sm font-medium dark:border-white/20"
+          className={SECONDARY_BUTTON}
         >
           Cancel
         </button>

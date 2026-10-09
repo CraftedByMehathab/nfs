@@ -136,10 +136,13 @@ export function SelectionEditor({
             type="button"
             aria-label={`Add a point after point ${index + 1}`}
             onClick={() => onOutlineChange(insertPoint(shape, index))}
-            className="absolute flex h-6 w-6 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-white/80 bg-black/60 text-sm leading-none text-white hover:bg-sky-500"
+            className="group absolute flex h-11 w-11 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full"
             style={{ left: `${midpoint.x * 100}%`, top: `${midpoint.y * 100}%` }}
           >
-            +
+            {/* The button is finger-sized; the visible mark stays small so it hides less of the floor. */}
+            <span className="flex h-6 w-6 items-center justify-center rounded-full border border-white/80 bg-black/60 text-sm leading-none text-white group-hover:bg-sky-500">
+              +
+            </span>
           </button>
         ))}
     </div>
