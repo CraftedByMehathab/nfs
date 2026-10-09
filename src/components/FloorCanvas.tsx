@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { isConvexQuad, quadToSquare } from "@/lib/geometry/homography";
 import { createFloorRenderer, type FloorRenderer } from "@/lib/gl/floorRenderer";
 import { isWebGL2Available } from "@/lib/gl/support";
+import { averageMaskedLuminance, samplePixels } from "@/lib/image/luminance";
 import { drawPolygonMask } from "@/lib/image/mask";
 import type { Polygon, Quad } from "@/types/geometry";
 
@@ -14,12 +15,14 @@ type FloorCanvasProps = {
   /** Where the floor finish is shown, in normalised image coordinates. */
   outline: Polygon;
   /** A detected or painted floor mask, white where the floor is; replaces `outline` when set. */
-  maskImage: TexImageSource | null;
+  maskImage: HTMLCanvasElement | null;
   /** Changes whenever `maskImage` is painted on, since the object itself stays the same. */
   maskVersion: number;
   floorTexture: TexImageSource;
   tiles: readonly [number, number];
   opacity: number;
+  /** How strongly the photo's shadows and highlights carry onto the finish, 0..1. */
+  shading: number;
 };
 
 export function FloorCanvas({
@@ -31,10 +34,13 @@ export function FloorCanvas({
   floorTexture,
   tiles,
   opacity,
+  shading,
 }: FloorCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rendererRef = useRef<FloorRenderer | null>(null);
   const maskRef = useRef<HTMLCanvasElement | null>(null);
+  // Average brightness of the original floor, which shading is measured against.
+  const referenceLuminance = useRef(0);
   // Only mounted in the browser once a photo exists, so probing here is safe.
   const [supported] = useState(isWebGL2Available);
   // Bumped when the browser restores a lost context, to rebuild every GL resource.
@@ -82,13 +88,14 @@ export function FloorCanvas({
   useEffect(() => {
     const renderer = rendererRef.current;
     if (!renderer) return;
-    if (maskImage) {
-      renderer.setMask(maskImage);
-      return;
+    let mask = maskImage;
+    if (!mask) {
+      maskRef.current ??= document.createElement("canvas");
+      drawPolygonMask(maskRef.current, outline, photo);
+      mask = maskRef.current;
     }
-    maskRef.current ??= document.createElement("canvas");
-    drawPolygonMask(maskRef.current, outline, photo);
-    renderer.setMask(maskRef.current);
+    renderer.setMask(mask);
+    referenceLuminance.current = averageMaskedLuminance(samplePixels(photo), samplePixels(mask));
   }, [outline, maskImage, maskVersion, photo, generation]);
 
   useEffect(() => {
@@ -96,8 +103,21 @@ export function FloorCanvas({
       imageToPlane: isConvexQuad(perspective) ? quadToSquare(perspective) : null,
       tiles,
       opacity,
+      shading,
+      referenceLuminance: referenceLuminance.current,
     });
-  }, [photo, perspective, outline, maskImage, maskVersion, floorTexture, tiles, opacity, generation]);
+  }, [
+    photo,
+    perspective,
+    outline,
+    maskImage,
+    maskVersion,
+    floorTexture,
+    tiles,
+    opacity,
+    shading,
+    generation,
+  ]);
 
   if (!supported) {
     return (

@@ -3,7 +3,7 @@
 import { useMemo, useReducer, useState } from "react";
 import { BrushControls } from "@/components/BrushControls";
 import { EditorActions } from "@/components/EditorActions";
-import { FinishControls } from "@/components/FinishControls";
+import { FinishControls, type FinishSettings } from "@/components/FinishControls";
 import { FloorCanvas } from "@/components/FloorCanvas";
 import { MaskBrush } from "@/components/MaskBrush";
 import { SegmentedToggle } from "@/components/SegmentedToggle";
@@ -16,7 +16,6 @@ import { DEFAULT_QUAD } from "@/lib/geometry/quad";
 import { drawPolygonMask, type BrushMode } from "@/lib/image/mask";
 import { getTemplateTexture, TEMPLATES } from "@/lib/templates";
 import type { Polygon, Quad } from "@/types/geometry";
-import type { Template } from "@/types/template";
 
 const LAYERS: readonly { id: SelectionLayer; label: string }[] = [
   { id: "outline", label: "Outline" },
@@ -39,14 +38,17 @@ export function FloorEditor({ photo, onChoosePhoto }: FloorEditorProps) {
   const [brushing, setBrushing] = useState(false);
   const [brushMode, setBrushMode] = useState<BrushMode>("add");
   const [brushSize, setBrushSize] = useState(60);
-  const [template, setTemplate] = useState<Template>(TEMPLATES[0]);
-  const [patternSize, setPatternSize] = useState(1);
+  const [finish, setFinish] = useState<FinishSettings>({
+    template: TEMPLATES[0],
+    patternSize: 1,
+    shading: 0.8,
+  });
   const [showOriginal, setShowOriginal] = useState(false);
   const detection = useFloorDetection(photo);
 
   const detecting = detection.state.status === "running";
   const perspectiveValid = isConvexQuad(perspective);
-  const repeats = template.scale / patternSize;
+  const repeats = finish.template.scale / finish.patternSize;
   const tiles = useMemo(() => [repeats, repeats] as const, [repeats]);
   const warn = !showOriginal && !brushing && !detecting && !perspectiveValid;
 
@@ -101,9 +103,10 @@ export function FloorEditor({ photo, onChoosePhoto }: FloorEditorProps) {
             outline={outline ?? perspective}
             maskImage={mask}
             maskVersion={maskVersion}
-            floorTexture={getTemplateTexture(template)}
+            floorTexture={getTemplateTexture(finish.template)}
             tiles={tiles}
             opacity={showOriginal ? 0 : 1}
+            shading={finish.shading}
           />
           {brushing && mask && !showOriginal && (
             <MaskBrush mask={mask} mode={brushMode} size={brushSize} onPaint={markMaskChanged} />
@@ -137,12 +140,7 @@ export function FloorEditor({ photo, onChoosePhoto }: FloorEditorProps) {
           layer,
         })}
       </p>
-      <FinishControls
-        template={template}
-        onTemplateChange={setTemplate}
-        patternSize={patternSize}
-        onPatternSizeChange={setPatternSize}
-      />
+      <FinishControls value={finish} onChange={setFinish} />
       <EditorActions
         detecting={detecting}
         onDetect={detectFloor}

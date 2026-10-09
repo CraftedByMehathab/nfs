@@ -18,7 +18,9 @@ After detection, `fitQuadToMask` (`src/lib/geometry/fitQuad.ts`) guesses the per
 
 The brush (`MaskBrush`) paints floor in or out of the mask canvas directly. Brushing from a hand-drawn outline first turns that polygon into a mask.
 
-Still to do in Phase 2: luminance blending with feathered edges.
+The shader carries the photo's lighting onto the finish: it compares a blurred copy of the photo's luminance with the original floor's average (`src/lib/image/luminance.ts`) and brightens or darkens the finish to match. The blur comes from mipmaps, as does the soft mask edge.
+
+All six Phase 2 tasks are built. The picture can also be zoomed and panned (`ZoomViewport`).
 
 Out of scope until later phases: Supabase auth / saved projects / share links (Phase 3), before/after slider, download, photoreal AI mode, contractor features. Do not add these, or their dependencies, yet.
 

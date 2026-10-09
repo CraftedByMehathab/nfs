@@ -15,6 +15,10 @@ export type RenderParams = {
   tiles: readonly [number, number];
   /** 0 shows the original photo, 1 the full overlay. */
   opacity: number;
+  /** How strongly the photo's shadows and highlights carry onto the finish, 0..1. */
+  shading: number;
+  /** Average linear luminance of the original floor; 0 turns shading off. */
+  referenceLuminance: number;
 };
 
 export type FloorRenderer = {
@@ -33,8 +37,9 @@ function createTexture(gl: WebGL2RenderingContext): WebGLTexture {
   return texture;
 }
 
+/** Clamped at the edges, with mipmaps so the shader can read blurred copies. */
 function setClamped(gl: WebGL2RenderingContext): void {
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
 }
@@ -69,6 +74,8 @@ export function createFloorRenderer(canvas: HTMLCanvasElement): FloorRenderer {
     imageToPlane: uniformLocation(gl, program, "u_imageToPlane"),
     tiles: uniformLocation(gl, program, "u_tiles"),
     opacity: uniformLocation(gl, program, "u_opacity"),
+    shading: uniformLocation(gl, program, "u_shading"),
+    referenceLuminance: uniformLocation(gl, program, "u_referenceLuminance"),
   };
   // The triangle comes from gl_VertexID, but WebGL2 still needs a bound vertex array.
   const vertexArray = gl.createVertexArray();
@@ -100,6 +107,7 @@ export function createFloorRenderer(canvas: HTMLCanvasElement): FloorRenderer {
       gl.viewport(0, 0, photo.width, photo.height);
       gl.activeTexture(gl.TEXTURE0 + PHOTO_UNIT);
       uploadColor(gl, photo);
+      gl.generateMipmap(gl.TEXTURE_2D);
       hasPhoto = true;
     },
 
@@ -113,10 +121,11 @@ export function createFloorRenderer(canvas: HTMLCanvasElement): FloorRenderer {
     setMask(source) {
       gl.activeTexture(gl.TEXTURE0 + MASK_UNIT);
       gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, source);
+      gl.generateMipmap(gl.TEXTURE_2D);
       hasMask = true;
     },
 
-    render({ imageToPlane, tiles, opacity }) {
+    render({ imageToPlane, tiles, opacity, shading, referenceLuminance }) {
       if (!hasPhoto) return;
       const showOverlay = hasFloor && hasMask && imageToPlane !== null;
       gl.useProgram(program);
@@ -128,6 +137,8 @@ export function createFloorRenderer(canvas: HTMLCanvasElement): FloorRenderer {
       gl.uniformMatrix3fv(uniforms.imageToPlane, true, [...(imageToPlane ?? IDENTITY)]);
       gl.uniform2f(uniforms.tiles, tiles[0], tiles[1]);
       gl.uniform1f(uniforms.opacity, showOverlay ? opacity : 0);
+      gl.uniform1f(uniforms.shading, shading);
+      gl.uniform1f(uniforms.referenceLuminance, referenceLuminance);
       gl.drawArrays(gl.TRIANGLES, 0, 3);
     },
 
