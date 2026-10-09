@@ -28,6 +28,8 @@ type SelectionEditorProps = {
   outline: Polygon | null;
   /** Which set of points is editable once a custom outline exists. */
   layer: SelectionLayer;
+  /** True when the outline comes from floor detection, so only the perspective is edited. */
+  detected: boolean;
   onPerspectiveChange: (perspective: Quad) => void;
   onOutlineChange: (outline: Polygon) => void;
   /** Photo width divided by height. */
@@ -46,6 +48,7 @@ export function SelectionEditor({
   perspective,
   outline,
   layer,
+  detected,
   onPerspectiveChange,
   onOutlineChange,
   aspectRatio,
@@ -55,8 +58,12 @@ export function SelectionEditor({
 }: SelectionEditorProps) {
   const frameRef = useRef<HTMLDivElement>(null);
   const shape: Polygon = outline ?? perspective;
-  const editingPerspective = pointsVisible && (outline === null || layer === "perspective");
-  const editingOutline = pointsVisible && outline !== null && layer === "outline";
+  // Once the outline has its own shape, the perspective corners are drawn separately.
+  const separate = detected || outline !== null;
+  const outlineEditable = pointsVisible && !detected;
+  const editingOutline = outlineEditable && outline !== null && layer === "outline";
+  const editingPerspective =
+    pointsVisible && (detected || outline === null || layer === "perspective");
   const perspectiveStroke = perspectiveInvalid ? "stroke-red-500" : "stroke-amber-400";
 
   return (
@@ -73,13 +80,15 @@ export function SelectionEditor({
         visibility={pointsVisible ? "visible" : "hidden"}
         aria-hidden="true"
       >
-        <polygon
-          points={svgPoints(shape)}
-          className={outline === null && perspectiveInvalid ? "stroke-red-500" : "stroke-sky-400"}
-          strokeWidth={2}
-          vectorEffect="non-scaling-stroke"
-        />
-        {outline !== null && (
+        {!detected && (
+          <polygon
+            points={svgPoints(shape)}
+            className={!separate && perspectiveInvalid ? "stroke-red-500" : "stroke-sky-400"}
+            strokeWidth={2}
+            vectorEffect="non-scaling-stroke"
+          />
+        )}
+        {separate && (
           <polygon
             points={svgPoints(perspective)}
             className={perspectiveStroke}
@@ -96,7 +105,7 @@ export function SelectionEditor({
             key={index}
             point={perspective[index]}
             label={CORNER_LABELS[index]}
-            tone={outline === null ? "outline" : "perspective"}
+            tone={separate ? "perspective" : "outline"}
             frameRef={frameRef}
             onMove={(to) => onPerspectiveChange(moveCorner(perspective, index, to))}
           />
@@ -119,7 +128,7 @@ export function SelectionEditor({
           />
         ))}
 
-      {pointsVisible &&
+      {outlineEditable &&
         (outline === null || editingOutline) &&
         edgeMidpoints(shape).map((midpoint, index) => (
           <button

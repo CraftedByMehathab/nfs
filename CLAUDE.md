@@ -8,11 +8,15 @@ Epoxy floor visualizer: snap or upload a photo of a floor, pick an epoxy design,
 
 Pipeline (full product): capture photo -> detect floor -> fit 4 corners to a homography -> tile the template texture in a WebGL shader, warped by the homography and clipped to the floor -> blend original lighting -> compare, download, share.
 
-**Current phase: Phase 1 — Core Overlay.** Upload or camera capture, client-side resize to ~1024px, manual floor selection, WebGL2 shader that tiles and warps a texture into the selected area, and 3 test epoxy textures.
+**Current phase: Phase 2 — AI Floor Detection.** Phase 1 (upload or camera capture, resize to ~1024px, manual floor selection, WebGL2 overlay, 3 test finishes) is built.
 
-The selection has two parts. The **perspective** is always exactly four corners marking a rectangle on the floor; it gives the homography. The **outline** is a polygon of three or more points saying where the finish is shown; it is drawn into a mask texture that the shader clips to. They start as the same four points and separate once the user adds a point.
+The selection has two parts. The **perspective** is always exactly four corners marking a rectangle on the floor; it gives the homography. The **outline** says where the finish is shown; it is a mask texture that the shader clips to. The mask comes either from a hand-drawn polygon of three or more points, or from floor detection.
 
-Out of scope until later phases: auto segmentation (Phase 2), Supabase auth / saved projects / share links (Phase 3), luminance blending, before/after slider, download, photoreal AI mode, contractor features. Do not add these, or their dependencies, during Phase 1.
+Floor detection runs SegFormer-B0 (ADE20K) through Transformers.js in a web worker (`src/lib/segmentation/`). It uses WebGPU when available and WebAssembly otherwise. The model is downloaded from huggingface.co and the ONNX runtime from jsDelivr on first use. The worker keeps only the floor class from the model's low-resolution output; the main thread stretches that to the photo's size. Add `?segmentation=wasm` or `?segmentation=webgpu` to the URL to force a backend when benchmarking.
+
+Still to do in Phase 2: fit the perspective corners from the detected mask, a brush to fix the mask, and luminance blending with feathered edges.
+
+Out of scope until later phases: Supabase auth / saved projects / share links (Phase 3), before/after slider, download, photoreal AI mode, contractor features. Do not add these, or their dependencies, yet.
 
 ## Stack
 
@@ -20,6 +24,7 @@ Out of scope until later phases: auto segmentation (Phase 2), Supabase auth / sa
 - TypeScript, strict mode
 - Tailwind CSS
 - WebGL2, hand-written (no Three.js; revisit when gloss/reflection work starts)
+- Transformers.js (`@huggingface/transformers`) for in-browser segmentation
 - pnpm, ESLint, Vitest
 - Node 22.12 or newer (`.nvmrc` pins 24; run `nvm use` in a new shell)
 
@@ -30,7 +35,8 @@ docs/SPEC.md             full product spec
 public/                  static assets
 src/app/                 layout.tsx, page.tsx, globals.css
 src/components/          UI components, one per file
-src/lib/image/           file/camera -> ImageBitmap, resize
+src/lib/image/           file/camera -> ImageBitmap, resize, mask drawing
+src/lib/segmentation/     floor detection worker and its client
 src/lib/geometry/        homography math (pure, unit-tested)
 src/lib/gl/              WebGL2 program helpers, floor renderer, shaders
 src/lib/templates/       epoxy template definitions and texture sources

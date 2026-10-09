@@ -13,6 +13,8 @@ type FloorCanvasProps = {
   perspective: Quad;
   /** Where the floor finish is shown, in normalised image coordinates. */
   outline: Polygon;
+  /** A detected floor mask, white where the floor is; replaces `outline` when set. */
+  maskImage: TexImageSource | null;
   floorTexture: TexImageSource;
   tiles: readonly [number, number];
   opacity: number;
@@ -22,6 +24,7 @@ export function FloorCanvas({
   photo,
   perspective,
   outline,
+  maskImage,
   floorTexture,
   tiles,
   opacity,
@@ -76,10 +79,14 @@ export function FloorCanvas({
   useEffect(() => {
     const renderer = rendererRef.current;
     if (!renderer) return;
+    if (maskImage) {
+      renderer.setMask(maskImage);
+      return;
+    }
     maskRef.current ??= document.createElement("canvas");
     drawPolygonMask(maskRef.current, outline, photo);
     renderer.setMask(maskRef.current);
-  }, [outline, photo, generation]);
+  }, [outline, maskImage, photo, generation]);
 
   useEffect(() => {
     rendererRef.current?.render({
@@ -87,7 +94,7 @@ export function FloorCanvas({
       tiles,
       opacity,
     });
-  }, [photo, perspective, outline, floorTexture, tiles, opacity, generation]);
+  }, [photo, perspective, outline, maskImage, floorTexture, tiles, opacity, generation]);
 
   if (!supported) {
     return (
