@@ -70,6 +70,9 @@ export function ContractorSettings() {
           <button type="button" onClick={() => copyLink(profile.slug)} className={TEXT_LINK}>
             Copy link
           </button>
+          <Link href="/contractor/leads" className={TEXT_LINK}>
+            Quote requests
+          </Link>
         </div>
       )}
       <p role="status" className={`${NOTE} min-h-5`}>

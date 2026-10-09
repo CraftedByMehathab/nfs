@@ -7,6 +7,7 @@ import { FinishControls, type FinishSettings } from "@/components/FinishControls
 import type { FloorCanvasHandle } from "@/components/FloorCanvas";
 import { FloorStage, type BrushSettings } from "@/components/FloorStage";
 import { ProjectActions } from "@/components/ProjectActions";
+import { QuoteRequest } from "@/components/QuoteRequest";
 import { SegmentedToggle } from "@/components/SegmentedToggle";
 import type { SelectionLayer } from "@/components/SelectionEditor";
 import { selectionHint } from "@/components/selectionHint";
@@ -142,6 +143,7 @@ export function FloorEditor({ photo, initial, onChoosePhoto }: FloorEditorProps)
         }}
         onChoosePhoto={onChoosePhoto}
       />
+      <QuoteRequest getPicture={async () => (await canvas.current?.capture()) ?? null} templateId={finish.template.id} />
       <ProjectActions getSnapshot={getSnapshot} signature={signature} editing={initial ?? null} />
     </div>
   );

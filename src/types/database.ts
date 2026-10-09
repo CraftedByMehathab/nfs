@@ -37,6 +37,32 @@ export type Database = {
                   Relationships: [
                     
                   ]
+                },"leads": {
+                  Row: {
+                    "contractor_id": string,"created_at": string,"email": string | null,"id": string,"message": string | null,"name": string,"phone": string | null,"template_id": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "contractor_id": string,"created_at"?: string,"email"?: string | null,"id"?: string,"message"?: string | null,"name": string,"phone"?: string | null,"template_id"?: string | null
+                  }
+                  Update: {
+                    "contractor_id"?: string,"created_at"?: string,"email"?: string | null,"id"?: string,"message"?: string | null,"name"?: string,"phone"?: string | null,"template_id"?: string | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "leads_contractor_id_fkey"
+      columns: ["contractor_id"]
+isOneToOne: false
+      referencedRelation: "contractors"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "leads_template_id_fkey"
+      columns: ["template_id"]
+isOneToOne: false
+      referencedRelation: "templates"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"projects": {
                   Row: {
                     "corners": NonNullable<Json>,"created_at": string,"height": number,"id": string,"mask_path": string | null,"name": string | null,"original_path": string,"outline": Json | null,"user_id": string,"width": number
@@ -106,6 +132,12 @@ isOneToOne: false
 { Args: { "slug": string }; Returns: {
               "created_at": string,"height": number,"template_name": string,"width": number
             }[]
+                           },
+"lead_awaits_picture":
+{ Args: { "path": string }; Returns: boolean
+                           },
+"submit_lead":
+{ Args: { "email": string,"message": string,"name": string,"phone": string,"slug": string,"template_id": string }; Returns: string
                            }
           }
           Enums: {
