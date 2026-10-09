@@ -8,7 +8,13 @@ Epoxy floor visualizer: snap or upload a photo of a floor, pick an epoxy design,
 
 Pipeline (full product): capture photo -> detect floor -> fit 4 corners to a homography -> tile the template texture in a WebGL shader, warped by the homography and clipped to the floor -> blend original lighting -> compare, download, share.
 
-**Current phase: Phase 3 — Accounts & Saving.** Phase 1 (upload or camera capture, resize to ~1024px, manual floor selection, WebGL2 overlay, 3 test finishes) and Phase 2 (floor detection, brush, lighting) are built. From Phase 3, the before/after divider, JPEG download, saving, share links and a projects page are built and tested against a local Supabase. A saved picture reopens in the editor from its Edit link (`/?render=<id>`, loaded by `src/lib/projects/open.ts`), and saving from there replaces that picture instead of adding one. Google sign-in, the only sign-in method, and share links work against a cloud Supabase project that has the schema applied. Not done: the app itself is not deployed.
+**Current phase: Phase 4 — Polish, mobile, deploy, case study.** Phases 1 to 3 are built. Phase 1: upload or camera capture, resize to ~1024px, manual floor selection, WebGL2 overlay, the first finishes. Phase 2: floor detection, brush, lighting. Phase 3: the before/after divider, JPEG download, Google sign-in (the only sign-in method), saving, share links and a projects page. A saved picture reopens in the editor from its Edit link (`/?render=<id>`, loaded by `src/lib/projects/open.ts`), and saving from there replaces that picture instead of adding one.
+
+The app is deployed on Vercel at https://nfs-pied.vercel.app, from the GitHub repo: a merge to `main` deploys to production and each pull request gets a preview. It uses a cloud Supabase project that has the schema applied; Google sign-in and share links work against that project from a local dev server. Saving, sharing and reopening have automated browser checks against a local Supabase only, and on the deployed site only the signed-out pages have been checked.
+
+From Phase 4, the catalogue has ten finishes (flake, metallic, quartz and solid), each painted in code by `src/lib/templates`. A finish must also be a row in the `templates` table, added by a migration, or pictures using it cannot be saved; `catalogue.test.ts` checks the two agree. Apply new migrations to the cloud project (`supabase db push`) before merging, because a merge to `main` deploys.
+
+Not done from Phase 4: mobile polish, the Lighthouse ≥ 90 mobile target, and the case study.
 
 The selection has two parts. The **perspective** is always exactly four corners marking a rectangle on the floor; it gives the homography. The **outline** says where the finish is shown; it is a mask texture that the shader clips to. The mask comes either from a hand-drawn polygon of three or more points, or from floor detection.
 
