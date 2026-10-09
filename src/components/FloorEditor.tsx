@@ -10,6 +10,7 @@ import { SegmentedToggle } from "@/components/SegmentedToggle";
 import { SelectionEditor, type SelectionLayer } from "@/components/SelectionEditor";
 import { selectionHint } from "@/components/selectionHint";
 import { useFloorDetection } from "@/components/useFloorDetection";
+import { ZoomViewport } from "@/components/ZoomViewport";
 import { isConvexQuad } from "@/lib/geometry/homography";
 import { DEFAULT_QUAD } from "@/lib/geometry/quad";
 import { drawPolygonMask, type BrushMode } from "@/lib/image/mask";
@@ -82,31 +83,33 @@ export function FloorEditor({ photo, onChoosePhoto }: FloorEditorProps) {
 
   return (
     <div className="flex w-full flex-col items-center gap-4">
-      <SelectionEditor
-        perspective={perspective}
-        outline={outline}
-        layer={layer}
-        maskIsImage={mask !== null}
-        onPerspectiveChange={setPerspective}
-        onOutlineChange={setOutline}
-        aspectRatio={photo.width / photo.height}
-        perspectiveInvalid={!perspectiveValid}
-        pointsVisible={!showOriginal && !brushing}
-      >
-        <FloorCanvas
-          photo={photo}
+      <ZoomViewport aspectRatio={photo.width / photo.height}>
+        <SelectionEditor
           perspective={perspective}
-          outline={outline ?? perspective}
-          maskImage={mask}
-          maskVersion={maskVersion}
-          floorTexture={getTemplateTexture(template)}
-          tiles={tiles}
-          opacity={showOriginal ? 0 : 1}
-        />
-        {brushing && mask && !showOriginal && (
-          <MaskBrush mask={mask} mode={brushMode} size={brushSize} onPaint={markMaskChanged} />
-        )}
-      </SelectionEditor>
+          outline={outline}
+          layer={layer}
+          maskIsImage={mask !== null}
+          onPerspectiveChange={setPerspective}
+          onOutlineChange={setOutline}
+          aspectRatio={photo.width / photo.height}
+          perspectiveInvalid={!perspectiveValid}
+          pointsVisible={!showOriginal && !brushing}
+        >
+          <FloorCanvas
+            photo={photo}
+            perspective={perspective}
+            outline={outline ?? perspective}
+            maskImage={mask}
+            maskVersion={maskVersion}
+            floorTexture={getTemplateTexture(template)}
+            tiles={tiles}
+            opacity={showOriginal ? 0 : 1}
+          />
+          {brushing && mask && !showOriginal && (
+            <MaskBrush mask={mask} mode={brushMode} size={brushSize} onPaint={markMaskChanged} />
+          )}
+        </SelectionEditor>
+      </ZoomViewport>
       {brushing && !showOriginal && (
         <BrushControls
           mode={brushMode}

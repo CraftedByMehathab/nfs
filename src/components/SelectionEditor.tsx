@@ -69,8 +69,8 @@ export function SelectionEditor({
   return (
     <div
       ref={frameRef}
-      className="relative touch-none select-none"
-      style={{ aspectRatio, width: `min(100%, calc(70vh * ${aspectRatio}))` }}
+      className="relative w-full select-none"
+      style={{ aspectRatio }}
     >
       {children}
       <svg

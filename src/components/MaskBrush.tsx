@@ -4,14 +4,9 @@ import { useRef, useState, type PointerEvent } from "react";
 import { paintStroke, type BrushMode } from "@/lib/image/mask";
 import type { Point } from "@/types/geometry";
 
-type Located = {
-  /** Pointer position in mask pixels. */
-  pixel: Point;
-  /** Pointer position in CSS pixels, relative to the layer. */
-  css: Point;
-  /** CSS pixels per mask pixel. */
-  scale: number;
-};
+// A touch must travel this far (CSS pixels) before it paints, so that a second
+// finger landing for a two-finger pan does not leave a dab behind.
+const TOUCH_SLOP = 4;
 
 type MaskBrushProps = {
   /** The mask being edited; painted on directly. */
@@ -23,16 +18,23 @@ type MaskBrushProps = {
   onPaint: () => void;
 };
 
-/** A transparent layer over the picture that paints floor in or out of the mask. */
+/**
+ * A transparent layer over the picture that paints floor in or out of the mask.
+ * One pointer paints; two fingers pan the zoomed picture instead.
+ */
 export function MaskBrush({ mask, mode, size, onPaint }: MaskBrushProps) {
   const layerRef = useRef<HTMLDivElement>(null);
+  // Every pointer currently down, by id, at its last client position.
+  const pointers = useRef(new Map<number, Point>());
   const lastPixel = useRef<Point | null>(null);
+  // A touch that has landed but not yet moved far enough to count as painting.
+  const pendingTouch = useRef<Point | null>(null);
   const [cursor, setCursor] = useState<{ css: Point; diameter: number } | null>(null);
 
-  function locate(event: PointerEvent): Located | null {
+  function toPixel(client: Point): { pixel: Point; css: Point; scale: number } | null {
     const rect = layerRef.current?.getBoundingClientRect();
     if (!rect || rect.width === 0 || rect.height === 0) return null;
-    const css = { x: event.clientX - rect.left, y: event.clientY - rect.top };
+    const css = { x: client.x - rect.left, y: client.y - rect.top };
     return {
       css,
       pixel: { x: (css.x / rect.width) * mask.width, y: (css.y / rect.height) * mask.height },
@@ -40,23 +42,60 @@ export function MaskBrush({ mask, mode, size, onPaint }: MaskBrushProps) {
     };
   }
 
-  function paintTo(event: PointerEvent, start: boolean): void {
-    const located = locate(event);
+  function paintAt(client: Point): void {
+    const located = toPixel(client);
     if (!located) return;
-    setCursor({ css: located.css, diameter: size * located.scale });
-    if (!start && !lastPixel.current) return;
     paintStroke(mask, lastPixel.current ?? located.pixel, located.pixel, size, mode);
     lastPixel.current = located.pixel;
     onPaint();
   }
 
-  function begin(event: PointerEvent<HTMLDivElement>): void {
-    event.currentTarget.setPointerCapture(event.pointerId);
-    paintTo(event, true);
+  function stopPainting(): void {
+    lastPixel.current = null;
+    pendingTouch.current = null;
   }
 
-  function end(): void {
-    lastPixel.current = null;
+  function down(event: PointerEvent<HTMLDivElement>): void {
+    const client = { x: event.clientX, y: event.clientY };
+    event.currentTarget.setPointerCapture(event.pointerId);
+    pointers.current.set(event.pointerId, client);
+    if (pointers.current.size > 1) {
+      stopPainting();
+    } else if (event.pointerType === "touch") {
+      pendingTouch.current = client;
+    } else {
+      paintAt(client);
+    }
+  }
+
+  function move(event: PointerEvent<HTMLDivElement>): void {
+    const client = { x: event.clientX, y: event.clientY };
+    const previous = pointers.current.get(event.pointerId);
+    const located = toPixel(client);
+    if (located) setCursor({ css: located.css, diameter: size * located.scale });
+    if (!previous) return;
+    pointers.current.set(event.pointerId, client);
+
+    if (pointers.current.size > 1) {
+      // Each of the two fingers reports its own movement, so apply half of each.
+      const viewport = layerRef.current?.closest<HTMLElement>("[data-zoom-viewport]");
+      viewport?.scrollBy((previous.x - client.x) / 2, (previous.y - client.y) / 2);
+      return;
+    }
+    const start = pendingTouch.current;
+    if (start) {
+      if (Math.hypot(client.x - start.x, client.y - start.y) < TOUCH_SLOP) return;
+      pendingTouch.current = null;
+      paintAt(start);
+    }
+    if (lastPixel.current) paintAt(client);
+  }
+
+  function up(event: PointerEvent<HTMLDivElement>): void {
+    // A touch that never moved is a tap: paint a single dab.
+    if (pendingTouch.current && pointers.current.size === 1) paintAt(pendingTouch.current);
+    pointers.current.delete(event.pointerId);
+    stopPainting();
   }
 
   return (
@@ -64,10 +103,10 @@ export function MaskBrush({ mask, mode, size, onPaint }: MaskBrushProps) {
       ref={layerRef}
       role="application"
       aria-label={mode === "add" ? "Paint to add floor" : "Paint to erase floor"}
-      onPointerDown={begin}
-      onPointerMove={(event) => paintTo(event, false)}
-      onPointerUp={end}
-      onPointerCancel={end}
+      onPointerDown={down}
+      onPointerMove={move}
+      onPointerUp={up}
+      onPointerCancel={up}
       onPointerLeave={() => setCursor(null)}
       className="absolute inset-0 cursor-crosshair touch-none overflow-hidden rounded-lg"
     >
