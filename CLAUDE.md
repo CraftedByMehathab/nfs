@@ -8,7 +8,7 @@ Epoxy floor visualizer: snap or upload a photo of a floor, pick an epoxy design,
 
 Pipeline (full product): capture photo -> detect floor -> fit 4 corners to a homography -> tile the template texture in a WebGL shader, warped by the homography and clipped to the floor -> blend original lighting -> compare, download, share.
 
-**Current phase: Phase 2 — AI Floor Detection.** Phase 1 (upload or camera capture, resize to ~1024px, manual floor selection, WebGL2 overlay, 3 test finishes) is built.
+**Current phase: Phase 3 — Accounts & Saving.** Phase 1 (upload or camera capture, resize to ~1024px, manual floor selection, WebGL2 overlay, 3 test finishes) and Phase 2 (floor detection, brush, lighting) are built. From Phase 3, the before/after divider and JPEG download are built; Supabase auth, storage, saved projects and share links are not started.
 
 The selection has two parts. The **perspective** is always exactly four corners marking a rectangle on the floor; it gives the homography. The **outline** says where the finish is shown; it is a mask texture that the shader clips to. The mask comes either from a hand-drawn polygon of three or more points, or from floor detection.
 
@@ -22,7 +22,14 @@ The shader carries the photo's lighting onto the finish: it compares a blurred c
 
 All six Phase 2 tasks are built. The picture can also be zoomed and panned (`ZoomViewport`).
 
-Out of scope until later phases: Supabase auth / saved projects / share links (Phase 3), before/after slider, download, photoreal AI mode, contractor features. Do not add these, or their dependencies, yet.
+Out of scope until later phases: photoreal AI mode, contractor features. Do not add these, or their dependencies, yet.
+
+## Phase 3 decisions
+
+- Sign-in offers both an email magic link and Google.
+- Saving and sharing need an account. Signed-out visitors can use the whole editor and download, but not save or share.
+- A share link shows the finished picture only, not the original photo.
+- The schema is in `supabase/migrations/`. A project stores the photo, the four perspective corners, and either a mask image or an outline polygon. Files live in private buckets under `<user_id>/`; sharing copies the picture to a public bucket under a random slug.
 
 ## Stack
 
@@ -47,6 +54,7 @@ src/lib/geometry/        homography math (pure, unit-tested)
 src/lib/gl/              WebGL2 program helpers, floor renderer, shaders
 src/lib/templates/       epoxy template definitions and texture sources
 src/types/               shared types (Point, Quad, Template)
+supabase/migrations/     database schema, row-level security, storage buckets
 ```
 
 ## Coding rules
