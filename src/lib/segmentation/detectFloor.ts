@@ -1,4 +1,6 @@
+import { fitQuadToMask } from "@/lib/geometry/fitQuad";
 import { maskCoverage, maskToCanvas } from "@/lib/image/mask";
+import type { Quad } from "@/types/geometry";
 import type { ClassShare } from "./logits";
 import type { DetectRequest, DetectResponse, SegmentationDevice } from "./protocol";
 
@@ -8,6 +10,11 @@ const MIN_FLOOR_COVERAGE = 0.01;
 export type FloorDetection = {
   /** White where the floor is, same size as the photo; null when no floor was found. */
   mask: HTMLCanvasElement | null;
+  /**
+   * Four corners fitted around the floor, as a first guess at its perspective;
+   * null when no floor was found or its shape gave nothing usable.
+   */
+  corners: Quad | null;
   /** Share of the photo that is floor, 0..1. */
   coverage: number;
   device: SegmentationDevice;
@@ -41,11 +48,12 @@ function handleResponse(response: DetectResponse): void {
   }
   const { mask, maskWidth, maskHeight, device, loadMs, inferenceMs, classes } = response;
   const coverage = maskCoverage(mask);
+  const found = coverage >= MIN_FLOOR_COVERAGE;
   request.resolve({
-    mask:
-      coverage >= MIN_FLOOR_COVERAGE
-        ? maskToCanvas(mask, { width: maskWidth, height: maskHeight }, request.size)
-        : null,
+    mask: found ? maskToCanvas(mask, { width: maskWidth, height: maskHeight }, request.size) : null,
+    corners: found
+      ? fitQuadToMask(mask, maskWidth, maskHeight, request.size.width / request.size.height)
+      : null,
     coverage,
     device,
     loadMs,

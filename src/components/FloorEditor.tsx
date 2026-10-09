@@ -47,6 +47,11 @@ export function FloorEditor({ photo, onChoosePhoto }: FloorEditorProps) {
   const tiles = useMemo(() => [repeats, repeats] as const, [repeats]);
   const warn = !showOriginal && !detecting && !perspectiveValid;
 
+  async function detectFloor(): Promise<void> {
+    const found = await detection.detect();
+    if (found?.corners) setPerspective(found.corners);
+  }
+
   function reset(): void {
     setPerspective(DEFAULT_QUAD);
     setOutline(null);
@@ -125,7 +130,7 @@ export function FloorEditor({ photo, onChoosePhoto }: FloorEditorProps) {
             Outline by hand
           </button>
         ) : (
-          <button type="button" onClick={detection.detect} disabled={detecting} className={SECONDARY_BUTTON}>
+          <button type="button" onClick={detectFloor} disabled={detecting} className={SECONDARY_BUTTON}>
             {detecting ? "Detecting…" : "Detect floor"}
           </button>
         )}

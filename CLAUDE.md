@@ -14,7 +14,9 @@ The selection has two parts. The **perspective** is always exactly four corners 
 
 Floor detection runs SegFormer-B0 (ADE20K) through Transformers.js in a web worker (`src/lib/segmentation/`). It uses WebGPU when available and WebAssembly otherwise. The model is downloaded from huggingface.co and the ONNX runtime from jsDelivr on first use. The worker keeps only the floor class from the model's low-resolution output; the main thread stretches that to the photo's size. Add `?segmentation=wasm` or `?segmentation=webgpu` to the URL to force a backend when benchmarking.
 
-Still to do in Phase 2: fit the perspective corners from the detected mask, a brush to fix the mask, and luminance blending with feathered edges.
+After detection, `fitQuadToMask` (`src/lib/geometry/fitQuad.ts`) guesses the perspective corners from the mask. The guess is only reliable when the floor is photographed roughly head-on; a mask cannot give true perspective for angled shots, so the user can always drag the corners.
+
+Still to do in Phase 2: a brush to fix the mask, and luminance blending with feathered edges.
 
 Out of scope until later phases: Supabase auth / saved projects / share links (Phase 3), before/after slider, download, photoreal AI mode, contractor features. Do not add these, or their dependencies, yet.
 

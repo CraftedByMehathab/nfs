@@ -27,8 +27,11 @@ export function selectionHint({
     return "The perspective corners are crossed or folded in. Move them so they make a simple four-sided shape.";
   }
   if (detection.status === "found") {
-    const { inferenceMs, device } = detection.detection;
-    return `Floor found in ${Math.round(inferenceMs)} ms on ${DEVICE_NAMES[device]}. Place the four orange corners on a rectangle on the floor to set the perspective.`;
+    const { inferenceMs, device, corners } = detection.detection;
+    const found = `Floor found in ${Math.round(inferenceMs)} ms on ${DEVICE_NAMES[device]}.`;
+    return corners
+      ? `${found} The orange corners are a first guess at the perspective; if the pattern looks skewed, drag them onto a rectangle on the floor.`
+      : `${found} Place the four orange corners on a rectangle on the floor to set the perspective.`;
   }
   if (detection.status === "empty") {
     return "No floor was found in this photo. Mark it by hand with the corners.";

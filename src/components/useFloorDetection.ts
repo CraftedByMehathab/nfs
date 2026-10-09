@@ -24,9 +24,11 @@ export function useFloorDetection(photo: ImageBitmap) {
     };
   }, []);
 
-  async function detect(): Promise<void> {
+  /** Resolves with the detection when a floor was found, otherwise null. */
+  async function detect(): Promise<FloorDetection | null> {
     setState({ status: "running" });
     let next: FloorDetectionState;
+    let found: FloorDetection | null = null;
     try {
       const detection = await detectFloor(photo);
       console.debug("Floor detection", {
@@ -34,16 +36,22 @@ export function useFloorDetection(photo: ImageBitmap) {
         loadMs: Math.round(detection.loadMs),
         inferenceMs: Math.round(detection.inferenceMs),
         coverage: Number(detection.coverage.toFixed(3)),
+        corners: detection.corners?.map(({ x, y }) => `${x.toFixed(2)},${y.toFixed(2)}`) ?? null,
         classes: detection.classes.slice(0, 5).map(({ label, share }) => `${label} ${Math.round(share * 100)}%`),
       });
-      next = detection.mask
-        ? { status: "found", detection, mask: detection.mask }
-        : { status: "empty" };
+      if (detection.mask) {
+        next = { status: "found", detection, mask: detection.mask };
+        found = detection;
+      } else {
+        next = { status: "empty" };
+      }
     } catch (error) {
       console.error("Floor detection failed", error);
       next = { status: "failed" };
     }
-    if (mounted.current) setState(next);
+    if (!mounted.current) return null;
+    setState(next);
+    return found;
   }
 
   return { state, detect, clear: () => setState(IDLE) };
