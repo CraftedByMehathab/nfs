@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import Link from "next/link";
 import { useSession } from "@/components/useSession";
+import { TEXT_LINK } from "@/components/buttonStyles";
 
 /**
  * Where Google sends the browser after sign-in. Loading it finishes the
@@ -25,7 +26,7 @@ export function SignInComplete() {
         <p className="text-sm text-zinc-600 dark:text-zinc-400">
           Close this window, go back to NextFloor and try signing in again.
         </p>
-        <Link href="/" className="text-sm font-medium underline">
+        <Link href="/" className={TEXT_LINK}>
           Back to NextFloor
         </Link>
       </>
@@ -38,7 +39,7 @@ export function SignInComplete() {
       <p className="text-sm text-zinc-600 dark:text-zinc-400">
         Signed in as {user.email}. You can close this window and go back to your picture.
       </p>
-      <Link href="/" className="text-sm font-medium underline">
+      <Link href="/" className={TEXT_LINK}>
         Open NextFloor here
       </Link>
     </>

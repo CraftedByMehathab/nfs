@@ -3,12 +3,12 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { TEXT_LINK as ACTION } from "@/components/buttonStyles";
 import { downloadBlob } from "@/lib/image/download";
 import { deleteRender, downloadRender, type SavedRenderItem } from "@/lib/projects/list";
 import { sharePageUrl, shareRender, unshareRender } from "@/lib/projects/share";
 import { getSupabase, type AppSupabaseClient } from "@/lib/supabase/client";
 
-const ACTION = "text-sm font-medium underline disabled:opacity-50";
 
 type ProjectCardProps = {
   item: SavedRenderItem;

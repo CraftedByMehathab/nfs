@@ -3,6 +3,8 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  /* The tallest the editor's picture may be. */
+  --picture-max-height: 70vh;
 }
 
 @theme inline {
@@ -23,4 +25,23 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+/*
+ * On a phone held upright, the editor's picture stays at the top of the screen
+ * while the controls scroll beneath it, so a change of finish can be seen as it
+ * is made. The picture is kept to half the screen to leave room for them.
+ */
+@media (max-width: 639px) and (min-height: 560px) {
+  :root {
+    --picture-max-height: 50svh;
+  }
+
+  .picture-dock {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    padding-block: 0.5rem;
+    background: var(--background);
+  }
 }

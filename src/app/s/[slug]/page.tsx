@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { createAnonymousClient, sharedPictureUrl } from "@/lib/supabase/client";
+import { TEXT_LINK } from "@/components/buttonStyles";
 
 export const metadata = { title: "A floor finish preview — NextFloor" };
 
@@ -44,7 +45,7 @@ export default function SharedPage({ params }: PageProps<"/s/[slug]">) {
       <Suspense fallback={<p className="text-zinc-600 dark:text-zinc-400">Loading the picture…</p>}>
         <SharedPicture params={params} />
       </Suspense>
-      <Link href="/" className="text-sm font-medium underline">
+      <Link href="/" className={TEXT_LINK}>
         Try a finish on your own floor
       </Link>
     </main>

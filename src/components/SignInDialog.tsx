@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ACTIVE_BUTTON } from "@/components/buttonStyles";
+import { ACTIVE_BUTTON, TEXT_LINK } from "@/components/buttonStyles";
 import { getSupabase } from "@/lib/supabase/client";
 
 type SignInDialogProps = {
@@ -70,7 +70,7 @@ export function SignInDialog({ open, onClose }: SignInDialogProps) {
         {error}
       </p>
 
-      <button type="button" onClick={onClose} className="mt-2 text-sm underline">
+      <button type="button" onClick={onClose} className={TEXT_LINK}>
         Close
       </button>
     </dialog>

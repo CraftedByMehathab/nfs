@@ -6,7 +6,7 @@ import { SignInDialog } from "@/components/SignInDialog";
 import { useSession } from "@/components/useSession";
 import { getSupabase, supabaseConfigured } from "@/lib/supabase/client";
 
-const LINK = "text-sm font-medium underline-offset-4 hover:underline";
+const LINK = "inline-flex min-h-11 min-w-11 items-center text-sm font-medium underline-offset-4 hover:underline";
 
 /** Sign-in state in the page header: a sign-in button, or the account and its links. */
 export function AccountMenu() {
