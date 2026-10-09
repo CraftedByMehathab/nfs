@@ -97,3 +97,33 @@ export function maskToCanvas(mask: Uint8ClampedArray, maskSize: Size, size: Size
   context.putImageData(image, 0, 0);
   return canvas;
 }
+
+export type BrushMode = "add" | "erase";
+
+/**
+ * Paints a round brush stroke between two points of a mask, in mask pixels.
+ * "add" paints floor in (white); "erase" paints it out (black).
+ */
+export function paintStroke(
+  mask: HTMLCanvasElement,
+  from: { x: number; y: number },
+  to: { x: number; y: number },
+  diameter: number,
+  mode: BrushMode,
+): void {
+  const context = mask.getContext("2d");
+  if (!context) throw new Error("2D canvas is unavailable");
+  const color = mode === "add" ? "#fff" : "#000";
+  context.strokeStyle = color;
+  context.fillStyle = color;
+  context.lineWidth = diameter;
+  context.lineCap = "round";
+  context.beginPath();
+  context.moveTo(from.x, from.y);
+  context.lineTo(to.x, to.y);
+  context.stroke();
+  // A stroke of zero length draws nothing in some browsers, so stamp the end point too.
+  context.beginPath();
+  context.arc(to.x, to.y, diameter / 2, 0, Math.PI * 2);
+  context.fill();
+}

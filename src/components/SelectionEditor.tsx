@@ -28,8 +28,8 @@ type SelectionEditorProps = {
   outline: Polygon | null;
   /** Which set of points is editable once a custom outline exists. */
   layer: SelectionLayer;
-  /** True when the outline comes from floor detection, so only the perspective is edited. */
-  detected: boolean;
+  /** True when the outline is a detected or painted mask, so only the perspective has points. */
+  maskIsImage: boolean;
   onPerspectiveChange: (perspective: Quad) => void;
   onOutlineChange: (outline: Polygon) => void;
   /** Photo width divided by height. */
@@ -48,7 +48,7 @@ export function SelectionEditor({
   perspective,
   outline,
   layer,
-  detected,
+  maskIsImage,
   onPerspectiveChange,
   onOutlineChange,
   aspectRatio,
@@ -59,11 +59,11 @@ export function SelectionEditor({
   const frameRef = useRef<HTMLDivElement>(null);
   const shape: Polygon = outline ?? perspective;
   // Once the outline has its own shape, the perspective corners are drawn separately.
-  const separate = detected || outline !== null;
-  const outlineEditable = pointsVisible && !detected;
+  const separate = maskIsImage || outline !== null;
+  const outlineEditable = pointsVisible && !maskIsImage;
   const editingOutline = outlineEditable && outline !== null && layer === "outline";
   const editingPerspective =
-    pointsVisible && (detected || outline === null || layer === "perspective");
+    pointsVisible && (maskIsImage || outline === null || layer === "perspective");
   const perspectiveStroke = perspectiveInvalid ? "stroke-red-500" : "stroke-amber-400";
 
   return (
@@ -80,7 +80,7 @@ export function SelectionEditor({
         visibility={pointsVisible ? "visible" : "hidden"}
         aria-hidden="true"
       >
-        {!detected && (
+        {!maskIsImage && (
           <polygon
             points={svgPoints(shape)}
             className={!separate && perspectiveInvalid ? "stroke-red-500" : "stroke-sky-400"}

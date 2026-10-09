@@ -1,23 +1,21 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useReducer, useState } from "react";
+import { BrushControls } from "@/components/BrushControls";
+import { EditorActions } from "@/components/EditorActions";
+import { FinishControls } from "@/components/FinishControls";
 import { FloorCanvas } from "@/components/FloorCanvas";
+import { MaskBrush } from "@/components/MaskBrush";
+import { SegmentedToggle } from "@/components/SegmentedToggle";
 import { SelectionEditor, type SelectionLayer } from "@/components/SelectionEditor";
 import { selectionHint } from "@/components/selectionHint";
-import { TemplatePicker } from "@/components/TemplatePicker";
 import { useFloorDetection } from "@/components/useFloorDetection";
 import { isConvexQuad } from "@/lib/geometry/homography";
 import { DEFAULT_QUAD } from "@/lib/geometry/quad";
+import { drawPolygonMask, type BrushMode } from "@/lib/image/mask";
 import { getTemplateTexture, TEMPLATES } from "@/lib/templates";
 import type { Polygon, Quad } from "@/types/geometry";
 import type { Template } from "@/types/template";
-
-const BUTTON = "rounded-full border px-5 py-2 text-sm font-medium disabled:opacity-50";
-const SECONDARY_BUTTON = `${BUTTON} border-black/10 dark:border-white/20`;
-const ACTIVE_BUTTON = `${BUTTON} border-transparent bg-foreground text-background`;
-
-const MIN_PATTERN_SIZE = 0.5;
-const MAX_PATTERN_SIZE = 2;
 
 const LAYERS: readonly { id: SelectionLayer; label: string }[] = [
   { id: "outline", label: "Outline" },
@@ -34,29 +32,52 @@ export function FloorEditor({ photo, onChoosePhoto }: FloorEditorProps) {
   // Null until a point is added; until then the outline is the perspective corners.
   const [outline, setOutline] = useState<Polygon | null>(null);
   const [layer, setLayer] = useState<SelectionLayer>("outline");
+  // A detected or painted mask. While set, it replaces the polygon outline.
+  const [mask, setMask] = useState<HTMLCanvasElement | null>(null);
+  const [maskVersion, markMaskChanged] = useReducer((version: number) => version + 1, 0);
+  const [brushing, setBrushing] = useState(false);
+  const [brushMode, setBrushMode] = useState<BrushMode>("add");
+  const [brushSize, setBrushSize] = useState(60);
   const [template, setTemplate] = useState<Template>(TEMPLATES[0]);
-  // 1 is the template's normal size; larger values repeat the texture fewer times.
   const [patternSize, setPatternSize] = useState(1);
   const [showOriginal, setShowOriginal] = useState(false);
   const detection = useFloorDetection(photo);
 
-  const detectedMask = detection.state.status === "found" ? detection.state.mask : null;
   const detecting = detection.state.status === "running";
   const perspectiveValid = isConvexQuad(perspective);
   const repeats = template.scale / patternSize;
   const tiles = useMemo(() => [repeats, repeats] as const, [repeats]);
-  const warn = !showOriginal && !detecting && !perspectiveValid;
+  const warn = !showOriginal && !brushing && !detecting && !perspectiveValid;
 
   async function detectFloor(): Promise<void> {
     const found = await detection.detect();
-    if (found?.corners) setPerspective(found.corners);
+    if (!found?.mask) return;
+    setMask(found.mask);
+    markMaskChanged();
+    if (found.corners) setPerspective(found.corners);
+  }
+
+  function toggleBrush(): void {
+    if (!brushing && !mask) {
+      // Start painting from the current outline.
+      const canvas = document.createElement("canvas");
+      drawPolygonMask(canvas, outline ?? perspective, photo);
+      setMask(canvas);
+    }
+    setBrushing((current) => !current);
+  }
+
+  function outlineByHand(): void {
+    setMask(null);
+    setBrushing(false);
+    detection.clear();
   }
 
   function reset(): void {
+    outlineByHand();
     setPerspective(DEFAULT_QUAD);
     setOutline(null);
     setLayer("outline");
-    detection.clear();
   }
 
   return (
@@ -65,37 +86,37 @@ export function FloorEditor({ photo, onChoosePhoto }: FloorEditorProps) {
         perspective={perspective}
         outline={outline}
         layer={layer}
-        detected={detectedMask !== null}
+        maskIsImage={mask !== null}
         onPerspectiveChange={setPerspective}
         onOutlineChange={setOutline}
         aspectRatio={photo.width / photo.height}
         perspectiveInvalid={!perspectiveValid}
-        pointsVisible={!showOriginal}
+        pointsVisible={!showOriginal && !brushing}
       >
         <FloorCanvas
           photo={photo}
           perspective={perspective}
           outline={outline ?? perspective}
-          maskImage={detectedMask}
+          maskImage={mask}
+          maskVersion={maskVersion}
           floorTexture={getTemplateTexture(template)}
           tiles={tiles}
           opacity={showOriginal ? 0 : 1}
         />
+        {brushing && mask && !showOriginal && (
+          <MaskBrush mask={mask} mode={brushMode} size={brushSize} onPaint={markMaskChanged} />
+        )}
       </SelectionEditor>
-      {outline && !detectedMask && !showOriginal && (
-        <div role="group" aria-label="Points to edit" className="flex gap-2">
-          {LAYERS.map(({ id, label }) => (
-            <button
-              key={id}
-              type="button"
-              aria-pressed={layer === id}
-              onClick={() => setLayer(id)}
-              className={layer === id ? ACTIVE_BUTTON : SECONDARY_BUTTON}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
+      {brushing && !showOriginal && (
+        <BrushControls
+          mode={brushMode}
+          onModeChange={setBrushMode}
+          size={brushSize}
+          onSizeChange={setBrushSize}
+        />
+      )}
+      {outline && !mask && !showOriginal && (
+        <SegmentedToggle label="Points to edit" options={LAYERS} value={layer} onChange={setLayer} />
       )}
       <p
         role="status"
@@ -105,50 +126,32 @@ export function FloorEditor({ photo, onChoosePhoto }: FloorEditorProps) {
       >
         {selectionHint({
           showOriginal,
+          brushing,
           perspectiveValid,
           detection: detection.state,
+          maskIsImage: mask !== null,
           customOutline: outline !== null,
           layer,
         })}
       </p>
-      <TemplatePicker selectedId={template.id} onSelect={setTemplate} />
-      <label className="flex items-center gap-3 text-sm">
-        Pattern size
-        <input
-          type="range"
-          min={MIN_PATTERN_SIZE}
-          max={MAX_PATTERN_SIZE}
-          step={0.05}
-          value={patternSize}
-          onChange={(event) => setPatternSize(event.currentTarget.valueAsNumber)}
-          className="w-40 accent-sky-500"
-        />
-      </label>
-      <div className="flex flex-wrap justify-center gap-3">
-        {detectedMask ? (
-          <button type="button" onClick={detection.clear} className={SECONDARY_BUTTON}>
-            Outline by hand
-          </button>
-        ) : (
-          <button type="button" onClick={detectFloor} disabled={detecting} className={SECONDARY_BUTTON}>
-            {detecting ? "Detecting…" : "Detect floor"}
-          </button>
-        )}
-        <button
-          type="button"
-          aria-pressed={showOriginal}
-          onClick={() => setShowOriginal((current) => !current)}
-          className={showOriginal ? ACTIVE_BUTTON : SECONDARY_BUTTON}
-        >
-          Show original
-        </button>
-        <button type="button" onClick={reset} className={SECONDARY_BUTTON}>
-          Reset
-        </button>
-        <button type="button" onClick={onChoosePhoto} className={SECONDARY_BUTTON}>
-          Choose another photo
-        </button>
-      </div>
+      <FinishControls
+        template={template}
+        onTemplateChange={setTemplate}
+        patternSize={patternSize}
+        onPatternSizeChange={setPatternSize}
+      />
+      <EditorActions
+        detecting={detecting}
+        onDetect={detectFloor}
+        brushing={brushing}
+        onToggleBrush={toggleBrush}
+        hasMask={mask !== null}
+        onOutlineByHand={outlineByHand}
+        showOriginal={showOriginal}
+        onToggleOriginal={() => setShowOriginal((current) => !current)}
+        onReset={reset}
+        onChoosePhoto={onChoosePhoto}
+      />
     </div>
   );
 }

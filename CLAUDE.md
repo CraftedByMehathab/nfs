@@ -16,7 +16,9 @@ Floor detection runs SegFormer-B0 (ADE20K) through Transformers.js in a web work
 
 After detection, `fitQuadToMask` (`src/lib/geometry/fitQuad.ts`) guesses the perspective corners from the mask. The guess is only reliable when the floor is photographed roughly head-on; a mask cannot give true perspective for angled shots, so the user can always drag the corners.
 
-Still to do in Phase 2: a brush to fix the mask, and luminance blending with feathered edges.
+The brush (`MaskBrush`) paints floor in or out of the mask canvas directly. Brushing from a hand-drawn outline first turns that polygon into a mask.
+
+Still to do in Phase 2: luminance blending with feathered edges.
 
 Out of scope until later phases: Supabase auth / saved projects / share links (Phase 3), before/after slider, download, photoreal AI mode, contractor features. Do not add these, or their dependencies, yet.
 
