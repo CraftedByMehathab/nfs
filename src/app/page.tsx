@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { AccountMenu } from "@/components/AccountMenu";
+import { Logo } from "@/components/Logo";
 import { Visualizer } from "@/components/Visualizer";
 
 export default function Home() {
@@ -9,7 +10,9 @@ export default function Home() {
         <AccountMenu />
       </nav>
       <header className="text-center">
-        <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">NextFloor</h1>
+        <h1 className="flex justify-center">
+          <Logo />
+        </h1>
         <p className="mt-2 text-zinc-600 dark:text-zinc-400">
           Take or upload a photo of your floor to preview an epoxy finish.
         </p>
