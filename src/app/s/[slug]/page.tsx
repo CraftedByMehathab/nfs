@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { createAnonymousClient, sharedPictureUrl } from "@/lib/supabase/client";
+import { Logo } from "@/components/Logo";
 import { TEXT_LINK } from "@/components/buttonStyles";
 
 export const metadata = { title: "A floor finish preview — NextFloor" };
@@ -41,7 +42,9 @@ async function SharedPicture({ params }: { params: PageProps<"/s/[slug]">["param
 export default function SharedPage({ params }: PageProps<"/s/[slug]">) {
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col items-center justify-center gap-6 px-4 py-10 text-center">
-      <h1 className="text-2xl font-semibold tracking-tight">NextFloor</h1>
+      <h1>
+        <Logo />
+      </h1>
       <Suspense fallback={<p className="text-zinc-600 dark:text-zinc-400">Loading the picture…</p>}>
         <SharedPicture params={params} />
       </Suspense>
