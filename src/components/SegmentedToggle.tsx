@@ -17,7 +17,7 @@ export function SegmentedToggle<T extends string>({
   onChange,
 }: SegmentedToggleProps<T>) {
   return (
-    <div role="group" aria-label={label} className="flex gap-2">
+    <div role="group" aria-label={label} className="flex flex-wrap justify-center gap-2">
       {options.map((option) => (
         <button
           key={option.id}
