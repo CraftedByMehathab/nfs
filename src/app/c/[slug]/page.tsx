@@ -1,6 +1,7 @@
 import { cache, Suspense } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { ContractorProvider } from "@/components/ContractorContext";
 import { Visualizer } from "@/components/Visualizer";
 import { TEXT_LINK } from "@/components/buttonStyles";
 import { textColourOn } from "@/lib/contractors/accent";
@@ -62,7 +63,9 @@ async function BrandedVisualizer({ params }: { params: PageProps<"/c/[slug]">["p
         <p className={`text-center ${NOTE}`}>
           Take or upload a photo of your floor to preview an epoxy finish.
         </p>
-        <Visualizer />
+        <ContractorProvider contractor={{ slug, name: contractor.name }}>
+          <Visualizer />
+        </ContractorProvider>
       </main>
       <footer className={`px-4 pb-4 text-center text-sm ${NOTE}`}>
         Powered by{" "}

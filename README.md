@@ -17,9 +17,9 @@ This is an early build. The full product plan is in [docs/SPEC.md](docs/SPEC.md)
 - **Compare**: a draggable before/after divider shows the original photo on one side and the finish on the other.
 - **Download**: save the finished picture as a JPEG.
 - **Accounts**: sign in with Google to save pictures to your projects and share one by public link. Google sign-in needs OAuth credentials to be configured before it works.
-- **Contractor pages**: a flooring contractor can put the editor under their own business name, colour and contact details at `/c/<address>`, and send customers the link. Set one up at `/contractor` after signing in.
+- **Contractor pages**: a flooring contractor can put the editor under their own business name, colour and contact details at `/c/<address>`, and send customers the link. Set one up at `/contractor` after signing in. Visitors to the page can request a quote, which sends their contact details and the picture they made to the contractor's inbox at `/contractor/leads`.
 
-Not built yet: glossy reflections, a photoreal AI render, and the rest of the contractor features (quote requests, logos, a contractor's own finishes, an embeddable widget). See [Roadmap](#roadmap).
+Not built yet: glossy reflections, a photoreal AI render, and the rest of the contractor features (logos, a contractor's own finishes, an embeddable widget). See [Roadmap](#roadmap).
 
 Floor detection gives the outline of the floor but only a rough guess at its perspective. For a photo taken at an angle, drag the four orange corners onto a rectangle on the floor.
 
@@ -97,4 +97,4 @@ Next.js 16 (App Router), React 19, TypeScript in strict mode, Tailwind CSS 4, ha
 | 2 | Automatic floor detection in the browser, mask refinement, lighting | Built |
 | 3 | Accounts, saved projects, share links | Built |
 | 4 | Polish, mobile, deployment | Built |
-| 5 | Photoreal AI render, contractor features | In progress: contractor pages are built |
+| 5 | Photoreal AI render, contractor features | In progress: contractor pages and quote requests are built |
