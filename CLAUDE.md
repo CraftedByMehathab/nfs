@@ -8,7 +8,9 @@ Epoxy floor visualizer: snap or upload a photo of a floor, pick an epoxy design,
 
 Pipeline (full product): capture photo -> detect floor -> fit 4 corners to a homography -> tile the template texture in a WebGL shader, warped by the homography and clipped to the floor -> blend original lighting -> compare, download, share.
 
-**Current phase: Phase 1 — Core Overlay.** Upload or camera capture, client-side resize to ~1024px, manual 4-corner floor selection, WebGL2 shader that tiles and warps a texture into the selected area, and 3 test epoxy textures.
+**Current phase: Phase 1 — Core Overlay.** Upload or camera capture, client-side resize to ~1024px, manual floor selection, WebGL2 shader that tiles and warps a texture into the selected area, and 3 test epoxy textures.
+
+The selection has two parts. The **perspective** is always exactly four corners marking a rectangle on the floor; it gives the homography. The **outline** is a polygon of three or more points saying where the finish is shown; it is drawn into a mask texture that the shader clips to. They start as the same four points and separate once the user adds a point.
 
 Out of scope until later phases: auto segmentation (Phase 2), Supabase auth / saved projects / share links (Phase 3), luminance blending, before/after slider, download, photoreal AI mode, contractor features. Do not add these, or their dependencies, during Phase 1.
 
