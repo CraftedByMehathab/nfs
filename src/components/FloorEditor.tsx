@@ -13,6 +13,7 @@ import { selectionHint } from "@/components/selectionHint";
 import { useFloorSelection } from "@/components/useFloorSelection";
 import { isConvexQuad } from "@/lib/geometry/homography";
 import { downloadBlob } from "@/lib/image/download";
+import type { OpenedProject } from "@/lib/projects/open";
 import type { ProjectSnapshot } from "@/lib/projects/save";
 import { TEMPLATES } from "@/lib/templates";
 
@@ -23,20 +24,22 @@ const LAYERS: readonly { id: SelectionLayer; label: string }[] = [
 
 type FloorEditorProps = {
   photo: ImageBitmap;
+  /** The saved picture being edited, when the photo came from one. */
+  initial?: OpenedProject;
   onChoosePhoto: () => void;
 };
 
-export function FloorEditor({ photo, onChoosePhoto }: FloorEditorProps) {
-  const selection = useFloorSelection(photo);
+export function FloorEditor({ photo, initial, onChoosePhoto }: FloorEditorProps) {
+  const selection = useFloorSelection(photo, initial);
   const canvas = useRef<FloorCanvasHandle>(null);
   const [brush, setBrush] = useState<BrushSettings>({ on: false, mode: "add", size: 60 });
   const [comparing, setComparing] = useState(false);
   // Before/after divider position; the original photo shows left of it.
   const [split, setSplit] = useState(0.5);
   const [finish, setFinish] = useState<FinishSettings>({
-    template: TEMPLATES[0],
-    patternSize: 1,
-    shading: 0.8,
+    template: TEMPLATES.find(({ id }) => id === initial?.templateId) ?? TEMPLATES[0],
+    patternSize: initial?.patternSize ?? 1,
+    shading: initial?.shading ?? 0.8,
   });
 
   const { perspective, outline, mask } = selection;
@@ -139,7 +142,7 @@ export function FloorEditor({ photo, onChoosePhoto }: FloorEditorProps) {
         }}
         onChoosePhoto={onChoosePhoto}
       />
-      <ProjectActions getSnapshot={getSnapshot} signature={signature} />
+      <ProjectActions getSnapshot={getSnapshot} signature={signature} editing={initial ?? null} />
     </div>
   );
 }

@@ -5,18 +5,22 @@ import type { SelectionLayer } from "@/components/SelectionEditor";
 import { useFloorDetection } from "@/components/useFloorDetection";
 import { DEFAULT_QUAD } from "@/lib/geometry/quad";
 import { drawPolygonMask } from "@/lib/image/mask";
+import type { OpenedProject } from "@/lib/projects/open";
 import type { Polygon, Quad } from "@/types/geometry";
 
 export type FloorSelection = ReturnType<typeof useFloorSelection>;
 
-/** Where the finish goes on `photo`: the perspective corners plus an outline or mask. */
-export function useFloorSelection(photo: ImageBitmap) {
-  const [perspective, setPerspective] = useState<Quad>(DEFAULT_QUAD);
+/**
+ * Where the finish goes on `photo`: the perspective corners plus an outline or mask.
+ * `initial` is the saved selection to start from, if the photo came from a saved picture.
+ */
+export function useFloorSelection(photo: ImageBitmap, initial?: OpenedProject) {
+  const [perspective, setPerspective] = useState<Quad>(initial?.perspective ?? DEFAULT_QUAD);
   // Null until a point is added; until then the outline is the perspective corners.
-  const [outline, setOutline] = useState<Polygon | null>(null);
+  const [outline, setOutline] = useState<Polygon | null>(initial?.outline ?? null);
   const [layer, setLayer] = useState<SelectionLayer>("outline");
   // A detected or painted mask. While set, it replaces the polygon outline.
-  const [mask, setMask] = useState<HTMLCanvasElement | null>(null);
+  const [mask, setMask] = useState<HTMLCanvasElement | null>(initial?.mask ?? null);
   const [maskVersion, markMaskChanged] = useReducer((version: number) => version + 1, 0);
   const detection = useFloorDetection(photo);
 

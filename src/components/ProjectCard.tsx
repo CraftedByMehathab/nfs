@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { downloadBlob } from "@/lib/image/download";
 import { deleteRender, downloadRender, type SavedRenderItem } from "@/lib/projects/list";
 import { sharePageUrl, shareRender, unshareRender } from "@/lib/projects/share";
@@ -84,6 +85,9 @@ export function ProjectCard({ item, onChanged }: ProjectCardProps) {
         </span>
       </p>
       <div className="flex flex-wrap gap-x-4 gap-y-1">
+        <Link href={`/?render=${item.id}`} className={ACTION}>
+          Edit
+        </Link>
         {item.shareSlug ? (
           <>
             <button type="button" disabled={busy} onClick={() => copyLink(item.shareSlug ?? "")} className={ACTION}>
